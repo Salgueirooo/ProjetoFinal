@@ -4,7 +4,9 @@ import com.example.sistemagestao.domain.Product;
 import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
 import com.example.sistemagestao.repositories.ProductRepository;
+import com.example.sistemagestao.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,29 +16,33 @@ import java.util.List;
 public class ProductController {
 
     @Autowired
-    private ProductRepository repository;
+    private ProductRepository productRepository;
 
-    @PostMapping
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping("/add")
     public void addProduct(@RequestBody ProductRequestDTO data) {
-        Product productData = new Product(data);
-        repository.save(productData);
+        productService.addProduct(data);
     }
 
     @GetMapping("/{id}")
     public ProductResponseDTO getById(@PathVariable Long id){
-        Product product = repository.findById(id).get();
-        return new ProductResponseDTO(product);
+        return productService.getById(id);
     }
 
-    @DeleteMapping("/{id}")
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
+        return productService.updateProduct(id, newData);
+    }
+
+    @DeleteMapping("/delete/{id}")
     public void deleteById(@PathVariable Long id){
-        repository.deleteById(id);
+        productRepository.deleteById(id);
     }
-
 
     @GetMapping("/all")
     public List<ProductResponseDTO> getAll(){
-        List<ProductResponseDTO> productsList = repository.findAll().stream().map(ProductResponseDTO::new).toList();
-        return productsList;
+        return productService.getAll();
     }
 }

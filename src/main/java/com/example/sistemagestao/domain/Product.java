@@ -43,4 +43,14 @@ public class Product {
         this.discount = data.discount();
     }
 
+    public void updateProduct(ProductRequestDTO data) {
+        if (data.name() != null) this.name = data.name();
+        this.description = data.description();
+        if (data.price() != null) this.price = data.price();
+        this.image = data.image();
+        if (data.category() != null) this.category = data.category();
+        this.iva = data.iva();
+        this.discount = data.discount();
+    }
+
 }
