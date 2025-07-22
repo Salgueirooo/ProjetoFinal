@@ -27,30 +27,31 @@ public class Product {
 
     private String image;
 
-    //@Column(nullable = false)
-    private String category;
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     private Integer iva;
     private Integer discount;
 
-    public Product(ProductRequestDTO data) {
+    public Product(ProductRequestDTO data, Category category) {
         this.name = data.name();
         this.description = data.description();
         this.price = data.price();
         this.image = data.image();
-        this.category = data.category();
-        this.iva = data.iva();
-        this.discount = data.discount();
+        this.iva = data.iva() != null ? data.iva() : 0;
+        this.discount = data.discount() != null ? data.discount() : 0;
+        this.category = category;
     }
 
-    public void updateProduct(ProductRequestDTO data) {
+    public void updateProduct(ProductRequestDTO data, Category category) {
         if (data.name() != null) this.name = data.name();
         this.description = data.description();
         if (data.price() != null) this.price = data.price();
         this.image = data.image();
-        if (data.category() != null) this.category = data.category();
-        this.iva = data.iva();
-        this.discount = data.discount();
+        if (data.iva() != null) this.iva = data.iva();
+        if (data.discount() != null) this.discount = data.discount();
+        this.category = category;
     }
 
 }

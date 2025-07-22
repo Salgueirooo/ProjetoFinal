@@ -3,7 +3,6 @@ package com.example.sistemagestao.controllers;
 import com.example.sistemagestao.domain.Product;
 import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
-import com.example.sistemagestao.repositories.ProductRepository;
 import com.example.sistemagestao.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +15,6 @@ import java.util.List;
 public class ProductController {
 
     @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
     private ProductService productService;
 
     @PostMapping("/add")
@@ -27,7 +23,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ProductResponseDTO getById(@PathVariable Long id){
+    public ProductResponseDTO getProductById(@PathVariable Long id) {
         return productService.getById(id);
     }
 
@@ -37,12 +33,32 @@ public class ProductController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public void deleteById(@PathVariable Long id){
-        productRepository.deleteById(id);
+    public void deleteProductById(@PathVariable Long id) {
+        productService.deleteById(id);
     }
 
     @GetMapping("/all")
-    public List<ProductResponseDTO> getAll(){
-        return productService.getAll();
+    public List<ProductResponseDTO> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponseDTO>> searchProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long categoryId
+    ) {
+        List<ProductResponseDTO> result;
+
+        if (name != null && categoryId != null) {
+            result = productService.getAllProductsByNameAndCategory(name, categoryId);
+        } else if (name != null) {
+            result = productService.getAllProductsByName(name);
+        } else if (categoryId != null) {
+            result = productService.getAllProductsByCategory(categoryId);
+        } else {
+            result = productService.getAllProducts();
+        }
+
+        return ResponseEntity.ok(result);
     }
 }
