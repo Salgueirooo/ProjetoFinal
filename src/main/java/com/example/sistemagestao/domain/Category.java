@@ -26,9 +26,9 @@ public class Category {
 
     private String image;
 
-    @OneToMany(mappedBy = "category",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<Product> productsList;
+    //@OneToMany(mappedBy = "category",
+    //        cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    //private List<Product> productsList;
 
     public Category (CategoryRequestDTO data) {
         this.name = data.name();
