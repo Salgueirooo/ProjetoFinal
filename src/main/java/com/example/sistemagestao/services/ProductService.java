@@ -26,27 +26,29 @@ public class ProductService {
     private CategoryRepository categoryRepository;
 
     @Transactional
-    public void addProduct(ProductRequestDTO data) {
+    public ResponseEntity<ProductResponseDTO> add(ProductRequestDTO data) {
         Category category = categoryRepository.findById(data.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
         Product productData = new Product(data, category);
-        productRepository.save(productData);
+        Product saved = productRepository.save(productData);
+
+        return ResponseEntity.ok(new ProductResponseDTO(saved));
     }
 
     public ProductResponseDTO getById(Long id){
-        //Product product = productRepository.findById(id)
-          //      .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
-        //return new ProductResponseDTO(product);
-
         return new ProductResponseDTO(productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado")));
     }
 
     @Transactional
-    public ResponseEntity<Product> updateProduct(Long id, ProductRequestDTO newData) {
-        Category category = categoryRepository.findById(newData.categoryId())
-                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+    public ResponseEntity<ProductResponseDTO> update(Long id, ProductRequestDTO newData) {
+
+        Category category = null;
+        if (newData.categoryId() != null) {
+            category = categoryRepository.findById(newData.categoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+        }
 
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
@@ -54,39 +56,100 @@ public class ProductService {
         product.updateProduct(newData, category);
         productRepository.save(product);
 
-        return ResponseEntity.ok(product);
+        ProductResponseDTO productResponseDTO = new ProductResponseDTO(product);
+        return ResponseEntity.ok(productResponseDTO);
     }
 
     @Transactional
-    public void deleteById(Long id){
-        if (!productRepository.existsById(id)) {
-            throw new EntityNotFoundException("Produto com ID " + id + " não encontrado");
-        }
-        productRepository.deleteById(id);
+    public ResponseEntity<ProductResponseDTO> changeStateById(Long id){
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
+
+        product.toggleActive();
+        productRepository.save(product);
+
+        ProductResponseDTO productResponseDTO = new ProductResponseDTO(product);
+        return ResponseEntity.ok(productResponseDTO);
     }
 
-    public List<ProductResponseDTO> getAllProducts(){
+    public List<ProductResponseDTO> getAll(){
         return productRepository.findAllByOrderByNameAsc()
                 .stream().map(ProductResponseDTO::new)
                 .toList();
     }
 
-    public List<ProductResponseDTO> getAllProductsByName(String name){
+    public List<ProductResponseDTO> getAllActive(){
+        return productRepository.findByActiveTrueOrderByNameAsc()
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllInactive(){
+        return productRepository.findByActiveFalseOrderByNameAsc()
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllByName(String name){
         return productRepository.findByNameContainingIgnoreCaseOrderByNameAsc(name)
                 .stream()
                 .map(ProductResponseDTO::new)
                 .toList();
     }
 
-    public List<ProductResponseDTO> getAllProductsByCategory(Long categoryId){
+    public List<ProductResponseDTO> getAllActiveByName(String name){
+        return productRepository.findByNameContainingIgnoreCaseAndActiveTrueOrderByNameAsc(name)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllInactiveByName(String name){
+        return productRepository.findByNameContainingIgnoreCaseAndActiveFalseOrderByNameAsc(name)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllByCategory(Long categoryId){
         return productRepository.findByCategoryIdOrderByNameAsc(categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
                 .toList();
     }
 
-    public List<ProductResponseDTO> getAllProductsByNameAndCategory(String namePart, Long categoryId) {
+    public List<ProductResponseDTO> getAllActiveByCategory(Long categoryId){
+        return productRepository.findByCategoryIdAndActiveTrueOrderByNameAsc(categoryId)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllInactiveByCategory(Long categoryId){
+        return productRepository.findByCategoryIdAndActiveFalseOrderByNameAsc(categoryId)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllByNameAndCategory(String namePart, Long categoryId) {
         return productRepository.findByNameContainingIgnoreCaseAndCategoryIdOrderByNameAsc(namePart, categoryId)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllActiveByNameAndCategory(String namePart, Long categoryId) {
+        return productRepository.findByNameContainingIgnoreCaseAndCategoryIdAndActiveTrueOrderByNameAsc(namePart, categoryId)
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
+    }
+
+    public List<ProductResponseDTO> getAllInactiveByNameAndCategory(String namePart, Long categoryId) {
+        return productRepository.findByNameContainingIgnoreCaseAndCategoryIdAndActiveFalseOrderByNameAsc(namePart, categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
                 .toList();

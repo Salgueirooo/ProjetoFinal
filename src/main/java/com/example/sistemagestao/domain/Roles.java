@@ -8,11 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public enum Roles {
-    ADMIN(1, "admin"),
-    EMPLOYEE(2, "employee"),
-    CLIENT(3, "client");
+    ADMIN("Admin"),
+    EMPLOYEE("Employee"),
+    CLIENT("Client");
 
-    private int id;
     private String description;
 
 

@@ -26,37 +26,39 @@ public class CategoryService {
     private ProductRepository productRepository;
 
     @Transactional
-    public void addCategory(CategoryRequestDTO data) {
+    public ResponseEntity<CategoryResponseDTO> add(CategoryRequestDTO data) {
         Category category = new Category(data);
-        categoryRepository.save(category);
+        Category saved = categoryRepository.save(category);
+
+        return ResponseEntity.ok(new CategoryResponseDTO(saved));
     }
 
-    public List<CategoryResponseDTO> getAllCategories() {
+    public List<CategoryResponseDTO> getAll() {
         return categoryRepository.findAllByOrderByNameAsc()
                 .stream().map(CategoryResponseDTO::new)
                 .toList();
    }
 
-    public CategoryResponseDTO getCategoryById(Long id) {
+    public CategoryResponseDTO getById(Long id) {
         return new CategoryResponseDTO(categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada")));
     }
 
     @Transactional
-    public ResponseEntity<Category> updateCategory(Long id, CategoryRequestDTO newData) {
+    public ResponseEntity<CategoryResponseDTO> update(Long id, CategoryRequestDTO newData) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
 
         category.updateCategory(newData);
         categoryRepository.save(category);
 
-        return ResponseEntity.ok(category);
+        return ResponseEntity.ok(new CategoryResponseDTO(category));
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public Long deleteById(Long id) {
         if (!categoryRepository.existsById(id)) {
-            throw new EntityNotFoundException("Produto com ID " + id + " não encontrado");
+            throw new EntityNotFoundException("Categoria com ID " + id + " não encontrada");
         }
 
         List<Product> products = productRepository.findByCategoryId(id);
@@ -66,6 +68,8 @@ public class CategoryService {
         productRepository.saveAll(products);
 
         categoryRepository.deleteById(id);
+
+        return id;
     }
 
 }

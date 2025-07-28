@@ -18,6 +18,6 @@ public class UserController {
 
     @GetMapping("/all")
     public List<UserResponseDTO> getAllUsers(){
-        return userService.getAllUsers();
+        return userService.getAll();
     }
 }

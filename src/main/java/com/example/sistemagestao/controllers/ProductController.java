@@ -19,7 +19,7 @@ public class ProductController {
 
     @PostMapping("/add")
     public void addProduct(@RequestBody ProductRequestDTO data) {
-        productService.addProduct(data);
+        productService.add(data);
     }
 
     @GetMapping("/{id}")
@@ -28,35 +28,47 @@ public class ProductController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
-        return productService.updateProduct(id, newData);
+    public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
+        return productService.update(id, newData);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteProductById(@PathVariable Long id) {
-        productService.deleteById(id);
-    }
-
-    @GetMapping("/all")
-    public List<ProductResponseDTO> getAllProducts() {
-        return productService.getAllProducts();
+    @PutMapping("/change-state/{id}")
+    public void changeProductStateById(@PathVariable Long id) {
+        productService.changeStateById(id);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<ProductResponseDTO>> searchProducts(
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) Long categoryId
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean active
     ) {
         List<ProductResponseDTO> result;
 
-        if (name != null && categoryId != null) {
-            result = productService.getAllProductsByNameAndCategory(name, categoryId);
-        } else if (name != null) {
-            result = productService.getAllProductsByName(name);
-        } else if (categoryId != null) {
-            result = productService.getAllProductsByCategory(categoryId);
+        if (active != null) {
+            if (name != null && categoryId != null) {
+                result = active ? productService.getAllActiveByNameAndCategory(name, categoryId)
+                        : productService.getAllInactiveByNameAndCategory(name, categoryId);
+            } else if (name != null) {
+                result = active ? productService.getAllActiveByName(name)
+                        : productService.getAllInactiveByName(name);
+            } else if (categoryId != null) {
+                result = active ? productService.getAllActiveByCategory(categoryId)
+                        : productService.getAllInactiveByCategory(categoryId);
+            } else {
+                result = active ? productService.getAllActive()
+                        : productService.getAllInactive();
+            }
         } else {
-            result = productService.getAllProducts();
+            if (name != null && categoryId != null) {
+                result = productService.getAllByNameAndCategory(name, categoryId);
+            } else if (name != null) {
+                result = productService.getAllByName(name);
+            } else if (categoryId != null) {
+                result = productService.getAllByCategory(categoryId);
+            } else {
+                result = productService.getAll();
+            }
         }
 
         return ResponseEntity.ok(result);

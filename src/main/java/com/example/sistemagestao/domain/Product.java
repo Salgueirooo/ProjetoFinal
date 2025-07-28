@@ -14,7 +14,6 @@ import lombok.*;
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -33,6 +32,7 @@ public class Product {
 
     private Integer iva;
     private Integer discount;
+    private Boolean active;
 
     public Product(ProductRequestDTO data, Category category) {
         this.name = data.name();
@@ -41,6 +41,7 @@ public class Product {
         this.image = data.image();
         this.iva = data.iva() != null ? data.iva() : 0;
         this.discount = data.discount() != null ? data.discount() : 0;
+        this.active = data.active() != null ? data.active() : true;
         this.category = category;
     }
 
@@ -51,7 +52,11 @@ public class Product {
         this.image = data.image();
         if (data.iva() != null) this.iva = data.iva();
         if (data.discount() != null) this.discount = data.discount();
-        this.category = category;
+        if (data.active() != null) this.active = data.active();
+        if (category != null) this.category = category;
     }
 
+    public void toggleActive() {
+        this.active = !this.active;
+    }
 }

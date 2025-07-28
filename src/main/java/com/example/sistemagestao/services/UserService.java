@@ -16,7 +16,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public List<UserResponseDTO> getAllUsers(){
+    public List<UserResponseDTO> getAll(){
         return userRepository.findAllByOrderByNameAsc()
                 .stream()
                 .map(UserResponseDTO::new)
