@@ -18,8 +18,8 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public void addProduct(@RequestBody ProductRequestDTO data) {
-        productService.add(data);
+    public ResponseEntity<ProductResponseDTO> addProduct(@RequestBody ProductRequestDTO data) {
+        return productService.add(data);
     }
 
     @GetMapping("/{id}")
@@ -33,8 +33,8 @@ public class ProductController {
     }
 
     @PutMapping("/change-state/{id}")
-    public void changeProductStateById(@PathVariable Long id) {
-        productService.changeStateById(id);
+    public ResponseEntity<ProductResponseDTO> changeProductStateById(@PathVariable Long id) {
+        return productService.changeStateById(id);
     }
 
     @GetMapping("/search")

@@ -57,9 +57,8 @@ public class CategoryService {
 
     @Transactional
     public Long deleteById(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new EntityNotFoundException("Categoria com ID " + id + " não encontrada");
-        }
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
 
         List<Product> products = productRepository.findByCategoryId(id);
         for (Product product : products) {
@@ -67,9 +66,8 @@ public class CategoryService {
         }
         productRepository.saveAll(products);
 
-        categoryRepository.deleteById(id);
+        categoryRepository.delete(category);
 
         return id;
     }
-
 }

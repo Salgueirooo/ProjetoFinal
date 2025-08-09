@@ -3,9 +3,11 @@ package com.example.sistemagestao.services;
 import com.example.sistemagestao.domain.Ingredient;
 import com.example.sistemagestao.domain.MeasurentUnits;
 import com.example.sistemagestao.domain.Product;
+import com.example.sistemagestao.domain.RecipeIngredient;
 import com.example.sistemagestao.dto.IngredientRequestDTO;
 import com.example.sistemagestao.dto.IngredientResponseDTO;
 import com.example.sistemagestao.repositories.IngredientRepository;
+import com.example.sistemagestao.repositories.RecipeIngredientsRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,8 @@ public class IngredientService {
 
     @Autowired
     private IngredientRepository ingredientRepository;
+    @Autowired
+    private RecipeIngredientsRepository recipeIngredientsRepository;
 
     public List<IngredientResponseDTO> getAll() {
         return ingredientRepository.findAllByOrderByNameAsc()
@@ -66,13 +70,15 @@ public class IngredientService {
     }
 
     @Transactional
-    public Long deleteById(Long id){
-        if (!ingredientRepository.existsById(id)) {
-            throw new EntityNotFoundException("Ingrediente com ID " + id + " não encontrado");
-        }
+    public Long deleteById(Long id) {
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ingrediente com ID " + id + " não encontrado"));
 
-        ingredientRepository.deleteById(id);
+        List<RecipeIngredient> relatedIngredients = recipeIngredientsRepository.findAllByIngredientId(id);
+        recipeIngredientsRepository.deleteAll(relatedIngredients);
+
+        ingredientRepository.delete(ingredient);
+
         return id;
     }
-
 }

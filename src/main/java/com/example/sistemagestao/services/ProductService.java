@@ -56,8 +56,7 @@ public class ProductService {
         product.updateProduct(newData, category);
         productRepository.save(product);
 
-        ProductResponseDTO productResponseDTO = new ProductResponseDTO(product);
-        return ResponseEntity.ok(productResponseDTO);
+        return ResponseEntity.ok(new ProductResponseDTO(product));
     }
 
     @Transactional
@@ -74,7 +73,8 @@ public class ProductService {
 
     public List<ProductResponseDTO> getAll(){
         return productRepository.findAllByOrderByNameAsc()
-                .stream().map(ProductResponseDTO::new)
+                .stream()
+                .map(ProductResponseDTO::new)
                 .toList();
     }
 

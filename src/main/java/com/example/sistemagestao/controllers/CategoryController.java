@@ -1,6 +1,5 @@
 package com.example.sistemagestao.controllers;
 
-import com.example.sistemagestao.domain.Category;
 import com.example.sistemagestao.dto.CategoryRequestDTO;
 import com.example.sistemagestao.dto.CategoryResponseDTO;
 import com.example.sistemagestao.services.CategoryService;
