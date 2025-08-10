@@ -4,7 +4,6 @@ import com.example.sistemagestao.dto.CategoryRequestDTO;
 import com.example.sistemagestao.dto.CategoryResponseDTO;
 import com.example.sistemagestao.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +16,8 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PostMapping("/add")
-    public ResponseEntity<CategoryResponseDTO> addCategory(@RequestBody CategoryRequestDTO data){
-        return categoryService.add(data);
+    public void addCategory(@RequestBody CategoryRequestDTO data){
+        categoryService.add(data);
     }
 
     @GetMapping("/all")
@@ -32,12 +31,12 @@ public class CategoryController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<CategoryResponseDTO> updateCategory(@PathVariable Long id, @RequestBody CategoryRequestDTO newData){
-        return categoryService.update(id, newData);
+    public void updateCategory(@PathVariable Long id, @RequestBody CategoryRequestDTO newData){
+        categoryService.update(id, newData);
     }
 
     @DeleteMapping("/delete/{id}")
-    public Long deleteCategoryById(@PathVariable Long id){
-        return categoryService.deleteById(id);
+    public void deleteCategoryById(@PathVariable Long id){
+        categoryService.delete(id);
     }
 }

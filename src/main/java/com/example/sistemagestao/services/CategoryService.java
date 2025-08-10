@@ -10,7 +10,6 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,11 +25,9 @@ public class CategoryService {
     private ProductRepository productRepository;
 
     @Transactional
-    public ResponseEntity<CategoryResponseDTO> add(CategoryRequestDTO data) {
+    public void add(CategoryRequestDTO data) {
         Category category = new Category(data);
-        Category saved = categoryRepository.save(category);
-
-        return ResponseEntity.ok(new CategoryResponseDTO(saved));
+        categoryRepository.save(category);
     }
 
     public List<CategoryResponseDTO> getAll() {
@@ -45,18 +42,16 @@ public class CategoryService {
     }
 
     @Transactional
-    public ResponseEntity<CategoryResponseDTO> update(Long id, CategoryRequestDTO newData) {
+    public void update(Long id, CategoryRequestDTO newData) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
 
         category.updateCategory(newData);
         categoryRepository.save(category);
-
-        return ResponseEntity.ok(new CategoryResponseDTO(category));
     }
 
     @Transactional
-    public Long deleteById(Long id) {
+    public void delete(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
 
@@ -67,7 +62,5 @@ public class CategoryService {
         productRepository.saveAll(products);
 
         categoryRepository.delete(category);
-
-        return id;
     }
 }

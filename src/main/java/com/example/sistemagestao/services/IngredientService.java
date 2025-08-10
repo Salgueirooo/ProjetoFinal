@@ -44,17 +44,15 @@ public class IngredientService {
     }
 
     @Transactional
-    public ResponseEntity<IngredientResponseDTO> add(IngredientRequestDTO data) {
+    public void add(IngredientRequestDTO data) {
         MeasurentUnits unit = MeasurentUnits.findByDescription(data.unitDescription());
 
         Ingredient ingredientData = new Ingredient(data, unit);
-        Ingredient saved = ingredientRepository.save(ingredientData);
-
-        return ResponseEntity.ok(new IngredientResponseDTO(saved));
+        ingredientRepository.save(ingredientData);
     }
 
     @Transactional
-    public ResponseEntity<IngredientResponseDTO> update(Long id, IngredientRequestDTO newData) {
+    public void update(Long id, IngredientRequestDTO newData) {
         MeasurentUnits unit = null;
         if (newData.unitDescription() != null)
             unit = MeasurentUnits.findByDescription(newData.unitDescription());
@@ -64,13 +62,10 @@ public class IngredientService {
 
         ingredient.updateIngredient(newData, unit);
         ingredientRepository.save(ingredient);
-
-        IngredientResponseDTO ingredientResponseDTO = new IngredientResponseDTO(ingredient);
-        return ResponseEntity.ok(ingredientResponseDTO);
     }
 
     @Transactional
-    public Long deleteById(Long id) {
+    public void deleteById(Long id) {
         Ingredient ingredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente com ID " + id + " não encontrado"));
 
@@ -78,7 +73,5 @@ public class IngredientService {
         recipeIngredientsRepository.deleteAll(relatedIngredients);
 
         ingredientRepository.delete(ingredient);
-
-        return id;
     }
 }

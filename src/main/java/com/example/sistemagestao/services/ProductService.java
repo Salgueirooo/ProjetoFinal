@@ -26,14 +26,12 @@ public class ProductService {
     private CategoryRepository categoryRepository;
 
     @Transactional
-    public ResponseEntity<ProductResponseDTO> add(ProductRequestDTO data) {
+    public void add(ProductRequestDTO data) {
         Category category = categoryRepository.findById(data.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
 
         Product productData = new Product(data, category);
-        Product saved = productRepository.save(productData);
-
-        return ResponseEntity.ok(new ProductResponseDTO(saved));
+        productRepository.save(productData);
     }
 
     public ProductResponseDTO getById(Long id){
@@ -42,7 +40,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ResponseEntity<ProductResponseDTO> update(Long id, ProductRequestDTO newData) {
+    public void update(Long id, ProductRequestDTO newData) {
 
         Category category = null;
         if (newData.categoryId() != null) {
@@ -55,20 +53,15 @@ public class ProductService {
 
         product.updateProduct(newData, category);
         productRepository.save(product);
-
-        return ResponseEntity.ok(new ProductResponseDTO(product));
     }
 
     @Transactional
-    public ResponseEntity<ProductResponseDTO> changeStateById(Long id){
+    public void changeStateById(Long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
 
         product.toggleActive();
         productRepository.save(product);
-
-        ProductResponseDTO productResponseDTO = new ProductResponseDTO(product);
-        return ResponseEntity.ok(productResponseDTO);
     }
 
     public List<ProductResponseDTO> getAll(){

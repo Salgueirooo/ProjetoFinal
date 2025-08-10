@@ -20,18 +20,18 @@ public class RecipeController {
     private RecipeService recipeService;
 
     @PostMapping("/add")
-    public ResponseEntity<RecipeResponseDTO> addRecipe(@RequestBody RecipeRequestDTO data){
-        return recipeService.add(data);
+    public void addRecipe(@RequestBody RecipeRequestDTO data){
+        recipeService.add(data);
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<RecipeResponseDTO> updateRecipe(@PathVariable Long id, @RequestBody String preparation){
-        return recipeService.update(id, preparation);
+    public void updateRecipe(@PathVariable Long id, @RequestBody String preparation){
+        recipeService.update(id, preparation);
     }
 
     @DeleteMapping("/delete/{id}")
-    public Long deleteRecipeById(@PathVariable Long id){
-        return recipeService.deleteById(id);
+    public void deleteRecipeById(@PathVariable Long id){
+        recipeService.deleteById(id);
     }
 
     @GetMapping("/{id}")
@@ -64,18 +64,18 @@ public class RecipeController {
     }
 
     @PostMapping("/add-ingredient")
-    public ResponseEntity<RecipeIngredientResponseDTO> addIngredient(@RequestBody RecipeIngredientRequestDTO data){
-        return recipeService.addIngredient(data);
+    public void addIngredient(@RequestBody RecipeIngredientRequestDTO data){
+        recipeService.addIngredient(data);
     }
 
     @PutMapping("/update-ingredient/{id}")
-    public ResponseEntity<RecipeIngredientResponseDTO> updateIngredient(@PathVariable Long id, @RequestBody Double quantity){
-        return recipeService.updateIngredient(id, quantity);
+    public void updateIngredient(@PathVariable Long id, @RequestBody Double quantity){
+        recipeService.updateIngredient(id, quantity);
     }
 
     @DeleteMapping("/delete-ingredient/{id}")
-    public Long deleteIngredient(@PathVariable Long id){
-        return recipeService.deleteIngredient(id);
+    public void deleteIngredient(@PathVariable Long id){
+        recipeService.deleteIngredient(id);
     }
 
 

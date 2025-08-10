@@ -17,7 +17,7 @@ public class IngredientController {
     private IngredientService ingredientService;
 
     @RequestMapping("/search")
-    public ResponseEntity<List<IngredientResponseDTO>> searchIngredients(
+    public List<IngredientResponseDTO> searchIngredients(
             @RequestParam(required = false) String name
     ) {
         List<IngredientResponseDTO> result;
@@ -27,7 +27,7 @@ public class IngredientController {
         else
             result = ingredientService.getAll();
 
-        return ResponseEntity.ok(result);
+        return result;
     }
 
     @RequestMapping("/{id}")
@@ -36,17 +36,17 @@ public class IngredientController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<IngredientResponseDTO> addIngredient(@RequestBody IngredientRequestDTO data){
-        return ingredientService.add(data);
+    public void addIngredient(@RequestBody IngredientRequestDTO data){
+        ingredientService.add(data);
     }
 
     @PostMapping("/update/{id}")
-    public ResponseEntity<IngredientResponseDTO> updateIngredient(@PathVariable Long id, @RequestBody IngredientRequestDTO newData){
-        return ingredientService.update(id, newData);
+    public void updateIngredient(@PathVariable Long id, @RequestBody IngredientRequestDTO newData){
+        ingredientService.update(id, newData);
     }
 
     @DeleteMapping("/delete/{id}")
-    public Long deleteIngredientById(@PathVariable Long id){
-        return ingredientService.deleteById(id);
+    public void deleteIngredientById(@PathVariable Long id){
+        ingredientService.deleteById(id);
     }
 }

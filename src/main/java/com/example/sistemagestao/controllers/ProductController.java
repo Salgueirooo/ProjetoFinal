@@ -18,8 +18,8 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public ResponseEntity<ProductResponseDTO> addProduct(@RequestBody ProductRequestDTO data) {
-        return productService.add(data);
+    public void addProduct(@RequestBody ProductRequestDTO data) {
+        productService.add(data);
     }
 
     @GetMapping("/{id}")
@@ -28,17 +28,17 @@ public class ProductController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<ProductResponseDTO> updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
-        return productService.update(id, newData);
+    public void updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
+        productService.update(id, newData);
     }
 
     @PutMapping("/change-state/{id}")
-    public ResponseEntity<ProductResponseDTO> changeProductStateById(@PathVariable Long id) {
-        return productService.changeStateById(id);
+    public void changeProductStateById(@PathVariable Long id) {
+        productService.changeStateById(id);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProductResponseDTO>> searchProducts(
+    public List<ProductResponseDTO> searchProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Boolean active
@@ -71,6 +71,6 @@ public class ProductController {
             }
         }
 
-        return ResponseEntity.ok(result);
+        return result;
     }
 }
