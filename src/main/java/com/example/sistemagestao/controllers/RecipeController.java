@@ -39,19 +39,14 @@ public class RecipeController {
         return recipeService.getById(id);
     }
 
-    @GetMapping("/all")
-    public List<RecipeResponseDTO> getAll(){
-        return recipeService.getAll();
-    }
-
     @GetMapping("/search")
     public List<RecipeResponseDTO> searchRecipes(
-            @RequestParam(required = false) String name
+            @RequestParam(required = false) String productName
     ) {
         List<RecipeResponseDTO> result;
 
-        if (name != null)
-            result = recipeService.getAllByName(name);
+        if (productName != null)
+            result = recipeService.getAllByName(productName);
         else
             result = recipeService.getAll();
 

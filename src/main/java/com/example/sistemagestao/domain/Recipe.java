@@ -19,7 +19,7 @@ public class Recipe {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
     private String preparation;

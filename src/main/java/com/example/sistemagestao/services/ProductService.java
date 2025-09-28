@@ -6,6 +6,7 @@ import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
 import com.example.sistemagestao.repositories.CategoryRepository;
 import com.example.sistemagestao.repositories.ProductRepository;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,11 @@ public class ProductService {
     @Transactional
     public void add(ProductRequestDTO data) {
         Category category = categoryRepository.findById(data.categoryId())
-                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
+
+        if (productRepository.existsByName(data.name())) {
+            throw new EntityExistsException("Já existe um Produto com esse nome.");
+        }
 
         Product productData = new Product(data, category);
         productRepository.save(productData);
@@ -36,7 +41,7 @@ public class ProductService {
 
     public ProductResponseDTO getById(Long id){
         return new ProductResponseDTO(productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado")));
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado.")));
     }
 
     @Transactional
@@ -45,11 +50,15 @@ public class ProductService {
         Category category = null;
         if (newData.categoryId() != null) {
             category = categoryRepository.findById(newData.categoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada"));
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
         }
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
+
+        if (productRepository.existsByName(newData.name())) {
+            throw new EntityExistsException("Já existe um Produto com esse nome.");
+        }
 
         product.updateProduct(newData, category);
         productRepository.save(product);
@@ -58,7 +67,7 @@ public class ProductService {
     @Transactional
     public void changeStateById(Long id){
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto com ID " + id + " não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
         product.toggleActive();
         productRepository.save(product);

@@ -24,18 +24,13 @@ public class Ingredient{
     @Column(nullable = false)
     private MeasurentUnits units;
 
-    @Column(nullable = false)
-    private Boolean allergenic;
-
     public Ingredient (IngredientRequestDTO data, MeasurentUnits units) {
         this.name = data.name();
-        this.allergenic = data.allergenic() != null ? data.allergenic() : false;
         this.units = units;
     }
 
     public void updateIngredient(IngredientRequestDTO data, MeasurentUnits units) {
         if (data.name() != null) this.name = data.name();
-        if (data.allergenic() != null) this.allergenic = data.allergenic();
         if (units != null) this.units = units;
     }
 }

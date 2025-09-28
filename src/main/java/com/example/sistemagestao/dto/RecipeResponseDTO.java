@@ -4,7 +4,12 @@ import com.example.sistemagestao.domain.Recipe;
 
 import java.util.List;
 
-public record RecipeResponseDTO(Long id, String productName, String preparation, List<RecipeIngredientResponseDTO> ingredients) {
+public record RecipeResponseDTO(
+        Long id,
+        String productName,
+        String preparation,
+        List<RecipeIngredientResponseDTO> ingredients
+) {
     public RecipeResponseDTO (Recipe recipe) {
         this(
             recipe.getId(),

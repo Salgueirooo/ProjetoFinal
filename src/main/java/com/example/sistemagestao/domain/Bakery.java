@@ -41,7 +41,7 @@ public class Bakery {
 
     public void updateBakery(BakeryRequestDTO data) {
         if (data.name() != null) this.name = data.name();
-        this.logo = data.logo();
+        if(data.logo() != null) this.logo = data.logo();
         if (data.phone_number() != null) this.phone_number = data.phone_number();
         if (data.email() != null) this.email = data.email();
         if (data.address() != null) this.address = data.address();

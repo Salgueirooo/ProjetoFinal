@@ -16,7 +16,7 @@ public class IngredientController {
     @Autowired
     private IngredientService ingredientService;
 
-    @RequestMapping("/search")
+    @GetMapping("/search")
     public List<IngredientResponseDTO> searchIngredients(
             @RequestParam(required = false) String name
     ) {
@@ -30,7 +30,12 @@ public class IngredientController {
         return result;
     }
 
-    @RequestMapping("/{id}")
+    @GetMapping("/without-stock")
+    public List<IngredientResponseDTO> getAllIngredientsWithoutStock(){
+        return ingredientService.getAllWithoutStock();
+    }
+
+    @GetMapping("/{id}")
     public IngredientResponseDTO getIngredientById(@PathVariable Long id){
         return ingredientService.getById(id);
     }
@@ -40,7 +45,7 @@ public class IngredientController {
         ingredientService.add(data);
     }
 
-    @PostMapping("/update/{id}")
+    @PutMapping("/update/{id}")
     public void updateIngredient(@PathVariable Long id, @RequestBody IngredientRequestDTO newData){
         ingredientService.update(id, newData);
     }

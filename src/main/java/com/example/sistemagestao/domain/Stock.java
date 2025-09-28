@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Table(
-        name = "recipe_ingredient",
+        name = "stock",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"recipe_id", "ingredient_id"})
+                @UniqueConstraint(columnNames = {"ingredient_id", "bakery_id"})
         }
 )
 @Entity
@@ -15,26 +15,24 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class RecipeIngredient {
-
+public class Stock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "recipe_id", nullable = false)
-    private Recipe recipe;
-
-    @ManyToOne
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "bakery_id", nullable = false)
+    private Bakery bakery;
+
     private Double quantity;
 
-    public RecipeIngredient(Recipe recipe, Ingredient ingredient, Double quantity) {
-        this.recipe = recipe;
+    public Stock(Ingredient ingredient, Bakery bakery, Double quantity) {
         this.ingredient = ingredient;
+        this.bakery = bakery;
         this.quantity = quantity;
     }
 }

@@ -12,6 +12,7 @@ import com.example.sistemagestao.repositories.IngredientRepository;
 import com.example.sistemagestao.repositories.ProductRepository;
 import com.example.sistemagestao.repositories.RecipeIngredientsRepository;
 import com.example.sistemagestao.repositories.RecipeRepository;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -38,16 +39,20 @@ public class RecipeService {
     @Transactional
     public void add(RecipeRequestDTO data) {
         Product product = productRepository.findById(data.productId())
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
-        Recipe recipe = new Recipe(product, data.description());
+        if (recipeRepository.existsByProductId(data.productId())) {
+            throw new EntityExistsException("Já existe uma Receita para este Produto.");
+        }
+
+        Recipe recipe = new Recipe(product, data.preparation());
         recipeRepository.save(recipe);
     }
 
     @Transactional
     public void update(Long id, String preparation){
         Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Receita não existe"));
+                .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
         recipe.setPreparation(preparation);
         recipeRepository.save(recipe);
@@ -56,7 +61,7 @@ public class RecipeService {
     @Transactional
     public void deleteById(Long id) {
         Recipe recipe = recipeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
         List<RecipeIngredient> relatedIngredients = recipeIngredientsRepository.findAllByRecipeId(id);
         recipeIngredientsRepository.deleteAll(relatedIngredients);
@@ -66,7 +71,7 @@ public class RecipeService {
 
     public RecipeResponseDTO getById(Long id) {
         return new RecipeResponseDTO(recipeRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Receita com ID " + id + " não encontrada")));
+            .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada.")));
     }
 
     public List<RecipeResponseDTO> getAll() {
@@ -93,10 +98,18 @@ public class RecipeService {
     @Transactional
     public void addIngredient(RecipeIngredientRequestDTO data) {
         Recipe recipe = recipeRepository.findById(data.recipeId())
-                .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
         Ingredient ingredient = ingredientRepository.findById(data.ingredientId())
-                .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado."));
+
+        if (recipeIngredientsRepository.existsByRecipeIdAndIngredientId(data.recipeId(), data.ingredientId())) {
+            throw new EntityExistsException("A Receita já possui esse Ingrediente.");
+        }
+
+        if (data.quantity() < 0) {
+            throw new IllegalArgumentException("A quantidade deve ser um número positivo.");
+        }
 
         RecipeIngredient recipeIngredient = new RecipeIngredient(recipe, ingredient, data.quantity());
         recipeIngredientsRepository.save(recipeIngredient);
@@ -105,11 +118,11 @@ public class RecipeService {
     @Transactional
     public void updateIngredient(Long recipeIngredientId, Double quantity) {
         if (quantity == null || quantity < 0) {
-            throw new IllegalArgumentException("A quantidade deve ser um valor numérico positivo");
+            throw new IllegalArgumentException("A quantidade deve ser um número positivo.");
         }
 
         RecipeIngredient recipeIngredient = recipeIngredientsRepository.findById(recipeIngredientId)
-                .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado."));
 
         recipeIngredient.setQuantity(quantity);
         recipeIngredientsRepository.save(recipeIngredient);
@@ -118,7 +131,7 @@ public class RecipeService {
     @Transactional
     public void deleteIngredient(Long id) {
         RecipeIngredient recipeIngredient = recipeIngredientsRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado."));
 
         recipeIngredientsRepository.delete(recipeIngredient);
     }

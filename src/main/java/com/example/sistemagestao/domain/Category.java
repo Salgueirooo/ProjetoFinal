@@ -32,7 +32,7 @@ public class Category {
 
     public void updateCategory(CategoryRequestDTO data) {
         if (data.name() != null) this.name = data.name();
-        this.image = data.image();
+        if (data.image() != null) this.image = data.image();
     }
 
 }

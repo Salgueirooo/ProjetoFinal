@@ -2,7 +2,13 @@ package com.example.sistemagestao.dto;
 
 import com.example.sistemagestao.domain.RecipeIngredient;
 
-public record RecipeIngredientResponseDTO(Long id, Long ingredientId, String name, Double quantity, String unitSymbol) {
+public record RecipeIngredientResponseDTO(
+        Long id,
+        Long ingredientId,
+        String name,
+        Double quantity,
+        String unitSymbol
+) {
     public RecipeIngredientResponseDTO (RecipeIngredient recipeIngredient) {
         this(
             recipeIngredient.getId(),

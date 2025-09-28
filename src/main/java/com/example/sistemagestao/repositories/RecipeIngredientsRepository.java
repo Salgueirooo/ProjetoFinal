@@ -8,4 +8,6 @@ import java.util.List;
 public interface RecipeIngredientsRepository extends JpaRepository<RecipeIngredient, Long> {
     List<RecipeIngredient> findAllByRecipeId(Long recipeId);
     List<RecipeIngredient> findAllByIngredientId(Long ingredientId);
+
+    boolean existsByRecipeIdAndIngredientId(Long recipeId, Long ingredientId);
 }

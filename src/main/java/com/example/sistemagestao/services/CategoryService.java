@@ -6,6 +6,7 @@ import com.example.sistemagestao.dto.CategoryRequestDTO;
 import com.example.sistemagestao.dto.CategoryResponseDTO;
 import com.example.sistemagestao.repositories.CategoryRepository;
 import com.example.sistemagestao.repositories.ProductRepository;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,10 @@ public class CategoryService {
 
     @Transactional
     public void add(CategoryRequestDTO data) {
+        if (categoryRepository.existsByName(data.name())) {
+            throw new EntityExistsException("Já existe uma Categoria com esse nome.");
+        }
+
         Category category = new Category(data);
         categoryRepository.save(category);
     }
@@ -38,13 +43,17 @@ public class CategoryService {
 
     public CategoryResponseDTO getById(Long id) {
         return new CategoryResponseDTO(categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada")));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada.")));
     }
 
     @Transactional
     public void update(Long id, CategoryRequestDTO newData) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
+
+        if (categoryRepository.existsByName(newData.name())) {
+            throw new EntityExistsException("Já existe uma Categoria com esse nome.");
+        }
 
         category.updateCategory(newData);
         categoryRepository.save(category);
@@ -53,7 +62,7 @@ public class CategoryService {
     @Transactional
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria com ID " + id + " não encontrada"));
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
 
         List<Product> products = productRepository.findByCategoryId(id);
         for (Product product : products) {

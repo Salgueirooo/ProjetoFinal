@@ -8,11 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public enum Roles {
-    ADMIN("Admin"),
-    EMPLOYEE("Employee"),
-    CLIENT("Client");
+    ADMIN("Administrador"),
+    COUNTER_EMPLOYEE("Empregado de Balcão"),
+    CONFECTIONER("Pasteleiro"),
+    CLIENT("Cliente");
 
-    private String description;
+    private String role;
 
 
 }
