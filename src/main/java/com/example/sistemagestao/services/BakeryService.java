@@ -1,9 +1,6 @@
 package com.example.sistemagestao.services;
 
-import com.example.sistemagestao.domain.Bakery;
-import com.example.sistemagestao.domain.Ingredient;
-import com.example.sistemagestao.domain.Product;
-import com.example.sistemagestao.domain.Stock;
+import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.BakeryRequestDTO;
 import com.example.sistemagestao.dto.BakeryResponseDTO;
 import com.example.sistemagestao.repositories.BakeryRepository;
