@@ -8,6 +8,7 @@ import java.util.List;
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     List<Recipe> findAllByOrderByProductNameAsc();
     List<Recipe> findByProductNameContainingIgnoreCaseOrderByProductNameAsc(String name);
-
+    List<Recipe> findByProduct_ActiveTrueOrderByProductNameAsc();
+    List<Recipe> findByProduct_ActiveTrueAndProductNameContainingIgnoreCaseOrderByProductNameAsc(String name);
     boolean existsByProductId(Long productId);
 }

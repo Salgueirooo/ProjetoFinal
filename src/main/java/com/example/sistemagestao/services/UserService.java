@@ -1,8 +1,11 @@
 package com.example.sistemagestao.services;
 
 
+import com.example.sistemagestao.domain.Roles;
+import com.example.sistemagestao.domain.User;
 import com.example.sistemagestao.dto.UserResponseDTO;
 import com.example.sistemagestao.repositories.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,5 +24,14 @@ public class UserService {
                 .stream()
                 .map(UserResponseDTO::new)
                 .toList();
+    }
+
+
+    public void updateUser(Long id, Roles role){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Utilizador não encontrado."));
+        user.setRole(role);
+
+        userRepository.save(user);
     }
 }

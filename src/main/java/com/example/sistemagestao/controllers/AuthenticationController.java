@@ -1,5 +1,6 @@
 package com.example.sistemagestao.controllers;
 
+import com.example.sistemagestao.domain.Roles;
 import com.example.sistemagestao.domain.User;
 import com.example.sistemagestao.dto.AuthenticationDTO;
 import com.example.sistemagestao.dto.LoginResponseDTO;
@@ -11,10 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/auth")
@@ -35,6 +33,20 @@ public class AuthenticationController {
         var token = tokenService.generateToken((User) auth.getPrincipal());
 
         return ResponseEntity.ok(new LoginResponseDTO(token));
+    }
+
+    @PostMapping("/register-client")
+    public ResponseEntity registerClient(@RequestBody RegisterDTO data){
+        if(this.userRepository.findByEmail(data.email()) != null){
+            return ResponseEntity.badRequest().build();
+        }
+
+        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        User newUser = new User(data.name(), data.email(), encryptedPassword, Roles.CLIENT, data.phone_number());
+
+        this.userRepository.save(newUser);
+
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/register")

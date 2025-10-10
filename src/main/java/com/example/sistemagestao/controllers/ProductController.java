@@ -22,7 +22,7 @@ public class ProductController {
         productService.add(data);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     public ProductResponseDTO getProductById(@PathVariable Long id) {
         return productService.getById(id);
     }
@@ -69,6 +69,26 @@ public class ProductController {
             } else {
                 result = productService.getAll();
             }
+        }
+
+        return result;
+    }
+
+    @GetMapping("/search-active")
+    public List<ProductResponseDTO> searchProductsClient(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long categoryId
+    ) {
+        List<ProductResponseDTO> result;
+
+        if (name != null && categoryId != null) {
+            result = productService.getAllActiveByNameAndCategory(name, categoryId);
+        } else if (name != null) {
+            result = productService.getAllActiveByName(name);
+        } else if (categoryId != null) {
+            result = productService.getAllActiveByCategory(categoryId);
+        } else {
+            result = productService.getAllActive();
         }
 
         return result;

@@ -3,10 +3,7 @@ package com.example.sistemagestao.services;
 import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.BakeryRequestDTO;
 import com.example.sistemagestao.dto.BakeryResponseDTO;
-import com.example.sistemagestao.repositories.BakeryRepository;
-import com.example.sistemagestao.repositories.IngredientRepository;
-import com.example.sistemagestao.repositories.ProductRepository;
-import com.example.sistemagestao.repositories.StockRepository;
+import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -28,6 +25,8 @@ public class BakeryService {
     private IngredientRepository ingredientRepository;
     @Autowired
     private StockRepository stockRepository;
+    @Autowired
+    private ProducedRecipeRepository producedRecipeRepository;
 
     @Transactional
     public void add(BakeryRequestDTO data) {
@@ -63,11 +62,19 @@ public class BakeryService {
     }
 
     // Fica a faltar eliminar as encomendas referentes a esta pastelaria
-    // as receitas produzidas na mesma
     @Transactional
     public void delete(Long id) {
         Bakery bakery = bakeryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
+
+        if(stockRepository.existsByBakeryIdAndQuantityGreaterThan(id, 0.0))
+            throw new IllegalStateException("Existe stock de ingredientes nesta pastelaria.");
+
+        List<ProducedRecipe> producedRecipes = producedRecipeRepository.findByBakeryId(id);
+
+        if (!producedRecipes.isEmpty()) {
+            producedRecipeRepository.deleteAll(producedRecipes);
+        }
 
         stockRepository.deleteByBakeryId(id);
 

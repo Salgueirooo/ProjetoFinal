@@ -1,23 +1,16 @@
 package com.example.sistemagestao.services;
 
-import com.example.sistemagestao.domain.Ingredient;
-import com.example.sistemagestao.domain.Product;
-import com.example.sistemagestao.domain.Recipe;
-import com.example.sistemagestao.domain.RecipeIngredient;
+import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.RecipeIngredientRequestDTO;
 import com.example.sistemagestao.dto.RecipeIngredientResponseDTO;
 import com.example.sistemagestao.dto.RecipeRequestDTO;
 import com.example.sistemagestao.dto.RecipeResponseDTO;
-import com.example.sistemagestao.repositories.IngredientRepository;
-import com.example.sistemagestao.repositories.ProductRepository;
-import com.example.sistemagestao.repositories.RecipeIngredientsRepository;
-import com.example.sistemagestao.repositories.RecipeRepository;
+import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +28,12 @@ public class RecipeService {
     private RecipeIngredientsRepository recipeIngredientsRepository;
     @Autowired
     private IngredientRepository ingredientRepository;
+    @Autowired
+    private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
+    @Autowired
+    private ProducedRecipeRepository producedRecipeRepository;
+    @Autowired
+    private ProducedRecipeService producedRecipeService;
 
     @Transactional
     public void add(RecipeRequestDTO data) {
@@ -63,8 +62,15 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
+        List<ProducedRecipe> producedRecipes = producedRecipeRepository.findAllByRecipeId(id);
+        for (ProducedRecipe pr : producedRecipes) {
+            producedRecipeService.delete(pr.getId());
+        }
+
         List<RecipeIngredient> relatedIngredients = recipeIngredientsRepository.findAllByRecipeId(id);
-        recipeIngredientsRepository.deleteAll(relatedIngredients);
+        for (RecipeIngredient ri : relatedIngredients) {
+            deleteIngredient(ri.getId());
+        }
 
         recipeRepository.delete(recipe);
     }
@@ -83,6 +89,20 @@ public class RecipeService {
 
     public List<RecipeResponseDTO> getAllByName(String name) {
         return recipeRepository.findByProductNameContainingIgnoreCaseOrderByProductNameAsc(name)
+                .stream()
+                .map(RecipeResponseDTO::new)
+                .toList();
+    }
+
+    public List<RecipeResponseDTO> getAllActive() {
+        return recipeRepository.findByProduct_ActiveTrueOrderByProductNameAsc()
+                .stream()
+                .map(RecipeResponseDTO::new)
+                .toList();
+    }
+
+    public List<RecipeResponseDTO> getAllActiveByName(String name) {
+        return recipeRepository.findByProduct_ActiveTrueAndProductNameContainingIgnoreCaseOrderByProductNameAsc(name)
                 .stream()
                 .map(RecipeResponseDTO::new)
                 .toList();
@@ -132,6 +152,14 @@ public class RecipeService {
     public void deleteIngredient(Long id) {
         RecipeIngredient recipeIngredient = recipeIngredientsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado."));
+
+        List<ProducedRecipeIngredient> producedRecipeIngredients = producedRecipeIngredientRepository
+                .findAllByProducedRecipe_Recipe_IdAndRecipeIngredient_Ingredient_Id(
+                        recipeIngredient.getRecipe().getId(),
+                        recipeIngredient.getIngredient().getId()
+                );
+
+        producedRecipeIngredientRepository.deleteAll(producedRecipeIngredients);
 
         recipeIngredientsRepository.delete(recipeIngredient);
     }

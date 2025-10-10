@@ -1,11 +1,10 @@
 package com.example.sistemagestao.controllers;
 
+import com.example.sistemagestao.domain.Roles;
 import com.example.sistemagestao.dto.UserResponseDTO;
 import com.example.sistemagestao.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,5 +18,10 @@ public class UserController {
     @GetMapping("/all")
     public List<UserResponseDTO> getAllUsers(){
         return userService.getAll();
+    }
+
+    @PutMapping("/update-role/{id}")
+    public void updateUserRole(@PathVariable Long id, @RequestBody Roles role){
+        userService.updateUser(id, role);
     }
 }

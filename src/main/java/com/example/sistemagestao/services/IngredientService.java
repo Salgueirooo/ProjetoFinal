@@ -1,13 +1,11 @@
 package com.example.sistemagestao.services;
 
-import com.example.sistemagestao.domain.Ingredient;
-import com.example.sistemagestao.domain.MeasurentUnits;
-import com.example.sistemagestao.domain.Product;
-import com.example.sistemagestao.domain.RecipeIngredient;
+import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.IngredientRequestDTO;
 import com.example.sistemagestao.dto.IngredientResponseDTO;
 import com.example.sistemagestao.repositories.IngredientRepository;
 import com.example.sistemagestao.repositories.RecipeIngredientsRepository;
+import com.example.sistemagestao.repositories.RecipeRepository;
 import com.example.sistemagestao.repositories.StockRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +27,12 @@ public class IngredientService {
     private StockRepository stockRepository;
     @Autowired
     private StockService stockService;
+    @Autowired
+    private RecipeRepository recipeRepository;
+    @Autowired
+    private RecipeIngredientsRepository recipeIngredientsRepository;
+    @Autowired
+    private RecipeService recipeService;
 
     public List<IngredientResponseDTO> getAll() {
         return ingredientRepository.findAllByOrderByNameAsc()
@@ -89,6 +93,20 @@ public class IngredientService {
 
         if (haveStock) {
             throw new IllegalStateException("Ingrediente com stock em pelo menos uma pastelaria.");
+        }
+
+        if(recipeRepository.existsByProductId(id))
+            throw new EntityExistsException("Ainda existe uma Receita para este Produto.");
+
+        List<Stock> stocks = stockRepository.findAllByIngredientId(id);
+        if (!stocks.isEmpty())
+            stockRepository.deleteAll(stocks);
+
+        List<RecipeIngredient> recipeIngredients = recipeIngredientsRepository.findAllByIngredientId(id);
+        if (!recipeIngredients.isEmpty()) {
+            for (RecipeIngredient ri : recipeIngredients) {
+                recipeService.deleteIngredient(ri.getId());
+            }
         }
 
         ingredientRepository.delete(ingredient);

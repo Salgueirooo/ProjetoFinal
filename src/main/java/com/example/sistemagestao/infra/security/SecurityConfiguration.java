@@ -26,9 +26,45 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/product/search").hasRole("CLIENT")
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/register-client")
+                        .permitAll()
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/bakery/**",
+                                "/api/category/**",
+                                "/api/product/get/*",
+                                "/api/product/search-active"
+                        )
+                        .hasRole("CLIENT")
+
+                        //.requestMatchers()
+                        //.hasRole("COUNTER_EMPLOYEE")
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/recipe/**",
+                                "/api/stock/**"
+                        )
+                        .hasRole("CONFECTIONER")
+
+                        .requestMatchers(
+                                "/api/produced-recipe/**"
+                        )
+                        .hasRole("CONFECTIONER")
+
+                        .requestMatchers(
+                                "/api/bakery/**",
+                                "/api/category/**",
+                                "/api/ingredient/**",
+                                "/api/product/**",
+                                "/api/recipe/**",
+                                "/api/stock/**",
+                                "api/user/**"
+                        )
+                        .hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

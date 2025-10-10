@@ -8,6 +8,8 @@ import com.example.sistemagestao.services.RecipeService;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,14 +43,34 @@ public class RecipeController {
 
     @GetMapping("/search")
     public List<RecipeResponseDTO> searchRecipes(
-            @RequestParam(required = false) String productName
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) Boolean active,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
         List<RecipeResponseDTO> result;
 
-        if (productName != null)
-            result = recipeService.getAllByName(productName);
-        else
-            result = recipeService.getAll();
+        if (isAdmin) {
+            if (active != null) {
+                if (productName != null)
+                    result = recipeService.getAllActiveByName(productName);
+                else
+                    result = recipeService.getAllActive();
+            } else {
+                if (productName != null)
+                    result = recipeService.getAllByName(productName);
+                else
+                    result = recipeService.getAll();
+            }
+
+        } else {
+            if (productName != null)
+                result = recipeService.getAllActiveByName(productName);
+            else
+                result = recipeService.getAllActive();
+        }
 
         return result;
     }

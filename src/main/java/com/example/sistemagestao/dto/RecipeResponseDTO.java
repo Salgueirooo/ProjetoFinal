@@ -7,6 +7,7 @@ import java.util.List;
 public record RecipeResponseDTO(
         Long id,
         String productName,
+        String image,
         String preparation,
         List<RecipeIngredientResponseDTO> ingredients
 ) {
@@ -14,6 +15,7 @@ public record RecipeResponseDTO(
         this(
             recipe.getId(),
             recipe.getProduct().getName(),
+            recipe.getProduct().getImage(),
             recipe.getPreparation(),
             recipe.getIngredientsList().stream()
                 .map(RecipeIngredientResponseDTO::new)
