@@ -27,6 +27,14 @@ public class BakeryService {
     private StockRepository stockRepository;
     @Autowired
     private ProducedRecipeRepository producedRecipeRepository;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private ProducedRecipeService producedRecipeService;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private UserRepository userRepository;
 
     @Transactional
     public void add(BakeryRequestDTO data) {
@@ -46,6 +54,13 @@ public class BakeryService {
                 .toList();
 
         stockRepository.saveAll(stocks);
+
+        List<User> userList = userRepository.findAll();
+        if (userList.isEmpty()) return;
+
+        for (User user : userList) {
+            orderService.initialize(bakery.getId(), user);
+        }
     }
 
     @Transactional
@@ -61,7 +76,6 @@ public class BakeryService {
         bakeryRepository.save(bakery);
     }
 
-    // Fica a faltar eliminar as encomendas referentes a esta pastelaria
     @Transactional
     public void delete(Long id) {
         Bakery bakery = bakeryRepository.findById(id)
@@ -72,8 +86,18 @@ public class BakeryService {
 
         List<ProducedRecipe> producedRecipes = producedRecipeRepository.findByBakeryId(id);
 
+        List<Order> orders = orderRepository.findAllByBakery_Id(bakery.getId());
+
         if (!producedRecipes.isEmpty()) {
-            producedRecipeRepository.deleteAll(producedRecipes);
+            for (ProducedRecipe pr : producedRecipes) {
+                producedRecipeService.cancelRecipe(pr.getId());
+            }
+        }
+
+        if (!orders.isEmpty()) {
+            for (Order o : orders) {
+                orderService.deleteOrder(o.getId());
+            }
         }
 
         stockRepository.deleteByBakeryId(id);

@@ -4,10 +4,7 @@ import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.ActivatedRecipeResponseDTO;
 import com.example.sistemagestao.dto.ProducedRecipeRequestDTO;
 import com.example.sistemagestao.dto.ProducedRecipeResponseDTO;
-import com.example.sistemagestao.repositories.BakeryRepository;
-import com.example.sistemagestao.repositories.ProducedRecipeIngredientRepository;
-import com.example.sistemagestao.repositories.ProducedRecipeRepository;
-import com.example.sistemagestao.repositories.RecipeRepository;
+import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,31 +28,48 @@ public class ProducedRecipeService {
     private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
     @Autowired
     private StockService stockService;
+    @Autowired
+    private ProductRepository productRepository;
 
     @Transactional
     public void add(ProducedRecipeRequestDTO data, User user) {
-        Recipe recipe = recipeRepository.findById(data.recipeId())
+        Product product = productRepository.findById(data.productId())
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
+
+        Recipe recipe = recipeRepository.findByProduct_id(data.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
         Bakery bakery = bakeryRepository.findById(data.bakeryId())
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
 
-        ProducedRecipe producedRecipe = new ProducedRecipe(recipe, bakery, user);
+        if (data.dose() <= 0)
+            throw new IllegalStateException("O valor da Dose deve ser maior que 0.");
+
+        if(!stockService.isStockSufficientForRecipe(recipe.getId(), bakery.getId())) {
+            throw new IllegalStateException("A Pastelaria não tem stock suficiente para produzir esta Receita.");
+        }
+
+        ProducedRecipe producedRecipe = new ProducedRecipe(product, bakery, recipe.getPreparation(), user);
 
         recipe.getIngredientsList().forEach(ri -> {
-            ProducedRecipeIngredient pri = new ProducedRecipeIngredient(producedRecipe, ri);
+            ProducedRecipeIngredient pri = new ProducedRecipeIngredient(producedRecipe, ri.getIngredient(), ri.getQuantity() * data.dose());
             producedRecipe.getIngredientsList().add(pri);
         });
 
-        stockService.updateStockAfterUse(data.recipeId(), data.bakeryId());
+        stockService.updateStockAfterUse(recipe.getId(), data.bakeryId(), data.dose());
 
         producedRecipeRepository.save(producedRecipe);
     }
 
     @Transactional
-    public void delete(Long id){
+    public void cancelRecipe(Long id){
         ProducedRecipe producedRecipe = producedRecipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita efetuada não encontrada."));
+
+        if(producedRecipe.getFinalDate() != null)
+            throw new IllegalStateException("Impossível apagar uma receita terminada.");
+
+        stockService.updateStockAfterRecipeCancelled(producedRecipe.getId());
 
         List<ProducedRecipeIngredient> producedRecipeIngredients = producedRecipeIngredientRepository.findAllByProducedRecipe_Id(id);
         if (!producedRecipeIngredients.isEmpty()) {
@@ -87,13 +101,19 @@ public class ProducedRecipeService {
     }
 
     public ActivatedRecipeResponseDTO getActiveRecipeById(Long id) {
+        ProducedRecipe producedRecipe = producedRecipeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Receita iniciada não encontrada."));
+
+        if(producedRecipe.getFinalDate()!=null)
+            throw new IllegalStateException("Receita terminada.");
+
         return new ActivatedRecipeResponseDTO(producedRecipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita iniciada não encontrada.")));
     }
 
     public List<ProducedRecipeResponseDTO> getActiveRecipes(Long bakeryId) {
-        Bakery bakery = bakeryRepository.findById(bakeryId)
-                .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
 
         return producedRecipeRepository.findByBakeryIdAndFinalDateIsNullOrderByInitialDateAsc(bakeryId)
                 .stream()
@@ -102,8 +122,8 @@ public class ProducedRecipeService {
     }
 
     public List<ProducedRecipeResponseDTO> getAllByBakery(Long bakeryId) {
-        Bakery bakery = bakeryRepository.findById(bakeryId)
-                .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
 
         return producedRecipeRepository.findByBakeryIdOrderByInitialDateDesc(bakeryId)
                 .stream()

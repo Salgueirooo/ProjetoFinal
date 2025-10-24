@@ -1,4 +1,4 @@
 package com.example.sistemagestao.dto;
 
-public record ProducedRecipeRequestDTO(Long recipeId, Long bakeryId) {
+public record ProducedRecipeRequestDTO(Long productId, Long bakeryId, Double dose) {
 }

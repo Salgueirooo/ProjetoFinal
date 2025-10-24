@@ -10,9 +10,9 @@ public record ProducedRecipeIngredientResponseDTO(
 ) {
     public ProducedRecipeIngredientResponseDTO(ProducedRecipeIngredient producedRecipeIngredient) {
         this(
-                producedRecipeIngredient.getRecipeIngredient().getIngredient().getName(),
-                producedRecipeIngredient.getRecipeIngredient().getQuantity(),
-                producedRecipeIngredient.getRecipeIngredient().getIngredient().getUnits().getSymbol(),
+                producedRecipeIngredient.getIngredient().getName(),
+                producedRecipeIngredient.getQuantity(),
+                producedRecipeIngredient.getIngredient().getUnits().getSymbol(),
                 producedRecipeIngredient.getDone()
         );
     }

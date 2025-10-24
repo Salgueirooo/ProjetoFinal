@@ -4,8 +4,7 @@ import com.example.sistemagestao.domain.Category;
 import com.example.sistemagestao.domain.Product;
 import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
-import com.example.sistemagestao.repositories.CategoryRepository;
-import com.example.sistemagestao.repositories.ProductRepository;
+import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -25,6 +24,12 @@ public class ProductService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private RecipeRepository recipeRepository;
+    @Autowired
+    private ProducedRecipeRepository producedRecipeRepository;
+    @Autowired
+    private OrderDetailsRepository orderDetailsRepository;
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -33,6 +38,10 @@ public class ProductService {
 
         if (productRepository.existsByName(data.name())) {
             throw new EntityExistsException("Já existe um Produto com esse nome.");
+        }
+
+        if(data.discount() < 0 || data.discount() > 100) {
+            throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
         }
 
         Product productData = new Product(data, category);
@@ -47,20 +56,42 @@ public class ProductService {
     @Transactional
     public void update(Long id, ProductRequestDTO newData) {
 
-        Category category = null;
-        if (newData.categoryId() != null) {
-            category = categoryRepository.findById(newData.categoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
-        }
-
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
-        if (productRepository.existsByName(newData.name())) {
-            throw new EntityExistsException("Já existe um Produto com esse nome.");
+        if(newData.name().equalsIgnoreCase(product.getName()) || newData.name().equalsIgnoreCase("")) {
+            Category category = null;
+            if (newData.categoryId() != null) {
+                category = categoryRepository.findById(newData.categoryId())
+                        .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
+            }
+
+            if (newData.discount() < 0 || newData.discount() > 100) {
+                throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
+            }
+
+            if (newData.price() < 0)
+                throw new IllegalStateException("O Preço deve ser um número positivo.");
+
+            product.updateProduct(newData, category);
+
+        } else {
+            if (productRepository.existsByName(newData.name())) {
+                throw new EntityExistsException("Já existe um Produto com esse nome.");
+            }
+
+            if (recipeRepository.existsByProductId(product.getId()))
+                throw new EntityExistsException("Este produto já tem uma Receita associada.");
+
+            if (producedRecipeRepository.existsByProductId(product.getId()))
+                throw new EntityExistsException("Já foram produzidas receitas deste Produto.");
+
+            if (orderDetailsRepository.existsByProductId(product.getId()))
+                throw new EntityExistsException("Este Produto já foi encomendado.");
+
+            product.setName(newData.name());
         }
 
-        product.updateProduct(newData, category);
         productRepository.save(product);
     }
 
@@ -116,6 +147,9 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllByCategory(Long categoryId){
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
+
         return productRepository.findByCategoryIdOrderByNameAsc(categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
@@ -123,6 +157,9 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllActiveByCategory(Long categoryId){
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
+
         return productRepository.findByCategoryIdAndActiveTrueOrderByNameAsc(categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
@@ -130,6 +167,9 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllInactiveByCategory(Long categoryId){
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
+
         return productRepository.findByCategoryIdAndActiveFalseOrderByNameAsc(categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
@@ -137,6 +177,9 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllByNameAndCategory(String namePart, Long categoryId) {
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
+
         return productRepository.findByNameContainingIgnoreCaseAndCategoryIdOrderByNameAsc(namePart, categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
@@ -144,6 +187,9 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllActiveByNameAndCategory(String namePart, Long categoryId) {
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
+
         return productRepository.findByNameContainingIgnoreCaseAndCategoryIdAndActiveTrueOrderByNameAsc(namePart, categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)
@@ -151,6 +197,8 @@ public class ProductService {
     }
 
     public List<ProductResponseDTO> getAllInactiveByNameAndCategory(String namePart, Long categoryId) {
+        if(!categoryRepository.existsById(categoryId))
+            throw new EntityNotFoundException("Categoria não encontrada.");
         return productRepository.findByNameContainingIgnoreCaseAndCategoryIdAndActiveFalseOrderByNameAsc(namePart, categoryId)
                 .stream()
                 .map(ProductResponseDTO::new)

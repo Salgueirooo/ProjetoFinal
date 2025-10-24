@@ -21,8 +21,11 @@ public class ProducedRecipe {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "recipe_id", nullable = false)
-    private Recipe recipe;
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    @Column(nullable = false)
+    private String preparation;
 
     @ManyToOne
     @JoinColumn(name = "bakery_id", nullable = false)
@@ -40,9 +43,10 @@ public class ProducedRecipe {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public ProducedRecipe(Recipe recipe, Bakery bakery, User user) {
-        this.recipe = recipe;
+    public ProducedRecipe(Product product, Bakery bakery, String preparation, User user) {
+        this.product = product;
         this.bakery = bakery;
+        this.preparation = preparation;
         this.initialDate = LocalDateTime.now();
         this.finalDate = null;
         this.user = user;

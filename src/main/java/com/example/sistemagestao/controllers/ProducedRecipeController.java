@@ -28,6 +28,11 @@ public class ProducedRecipeController {
         producedRecipeService.completeProduction(id);
     }
 
+    @PutMapping("/cancel-production/{id}")
+    public void cancelProduction(@PathVariable Long id) {
+        producedRecipeService.cancelRecipe(id);
+    }
+
     @PutMapping("/toggle-ingredient-state/{id}")
     public void toggleIngredientState(@PathVariable Long id) {
         producedRecipeService.toggleIngredientState(id);

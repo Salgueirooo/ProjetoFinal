@@ -20,15 +20,19 @@ public class ProducedRecipeIngredient {
     private ProducedRecipe producedRecipe;
 
     @ManyToOne
-    @JoinColumn(name = "recipe_ingredient_id", nullable = false)
-    private RecipeIngredient recipeIngredient;
+    @JoinColumn(name = "ingredient_id", nullable = false)
+    private Ingredient ingredient;
+
+    @Column(nullable = false)
+    private Double quantity;
 
     @Column(nullable = false)
     private Boolean done;
 
-    public ProducedRecipeIngredient(ProducedRecipe producedRecipe, RecipeIngredient recipeIngredient) {
+    public ProducedRecipeIngredient(ProducedRecipe producedRecipe, Ingredient ingredient, Double quantity) {
         this.producedRecipe = producedRecipe;
-        this.recipeIngredient = recipeIngredient;
+        this.ingredient = ingredient;
+        this.quantity = quantity;
         this.done = false;
     }
 

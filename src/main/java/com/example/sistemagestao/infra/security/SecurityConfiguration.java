@@ -36,12 +36,32 @@ public class SecurityConfiguration {
                                 "/api/bakery/**",
                                 "/api/category/**",
                                 "/api/product/get/*",
-                                "/api/product/search-active"
+                                "/api/product/search-active",
+                                "/api/order/order-in-cart/*",
+                                "/api/order/all-by-user/*"
                         )
                         .hasRole("CLIENT")
 
-                        //.requestMatchers()
-                        //.hasRole("COUNTER_EMPLOYEE")
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/order/make",
+                                "/api/order/cancel/*"
+
+                        )
+                        .hasRole("CLIENT")
+
+                        .requestMatchers(
+                                "/api/order/add-product",
+                                "/api/order/remove-product"
+                                )
+                        .hasRole("CLIENT")
+
+                        .requestMatchers(
+                                "/api/order/set-order-ready/*",
+                                "/api/order/set-order-delivered/*",
+                                "/api/order/search-username-day/*",
+                                "/api/order/get-accepted-by-date/"
+                        )
+                        .hasRole("COUNTER_EMPLOYEE")
 
                         .requestMatchers(HttpMethod.GET,
                                 "/api/recipe/**",
@@ -61,7 +81,8 @@ public class SecurityConfiguration {
                                 "/api/product/**",
                                 "/api/recipe/**",
                                 "/api/stock/**",
-                                "api/user/**"
+                                "/api/user/**",
+                                "/api/order/**"
                         )
                         .hasRole("ADMIN")
 

@@ -3,10 +3,7 @@ package com.example.sistemagestao.services;
 import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.IngredientRequestDTO;
 import com.example.sistemagestao.dto.IngredientResponseDTO;
-import com.example.sistemagestao.repositories.IngredientRepository;
-import com.example.sistemagestao.repositories.RecipeIngredientsRepository;
-import com.example.sistemagestao.repositories.RecipeRepository;
-import com.example.sistemagestao.repositories.StockRepository;
+import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -33,6 +30,8 @@ public class IngredientService {
     private RecipeIngredientsRepository recipeIngredientsRepository;
     @Autowired
     private RecipeService recipeService;
+    @Autowired
+    private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
 
     public List<IngredientResponseDTO> getAll() {
         return ingredientRepository.findAllByOrderByNameAsc()
@@ -73,12 +72,26 @@ public class IngredientService {
 
     @Transactional
     public void update(Long id, IngredientRequestDTO newData) {
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado."));
+
+        boolean haveStock = stockRepository.existsByIngredientIdAndQuantityGreaterThan(id, 0.0);
+
+        if (haveStock)
+            throw new IllegalStateException("Ingrediente com stock em pelo menos uma pastelaria.");
+
+        if (recipeIngredientsRepository.existsByIngredientId(ingredient.getId()))
+            throw new EntityExistsException("Ingrediente está presente em Receita(s).");
+
+        if (producedRecipeIngredientRepository.existsByIngredientId(ingredient.getId()))
+            throw new EntityExistsException("Ingrediente está presente em Receita(s) Produzida(s).");
+
+        if (ingredientRepository.existsByName(newData.name()))
+            throw new EntityExistsException("Já existe um Ingrediente com esse nome.");
+
         MeasurentUnits unit = null;
         if (newData.unitDescription() != null)
             unit = MeasurentUnits.findByDescription(newData.unitDescription());
-
-        Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado."));
 
         ingredient.updateIngredient(newData, unit);
         ingredientRepository.save(ingredient);
@@ -95,19 +108,15 @@ public class IngredientService {
             throw new IllegalStateException("Ingrediente com stock em pelo menos uma pastelaria.");
         }
 
-        if(recipeRepository.existsByProductId(id))
-            throw new EntityExistsException("Ainda existe uma Receita para este Produto.");
+        if (recipeIngredientsRepository.existsByIngredientId(ingredient.getId()))
+            throw new EntityExistsException("Ingrediente está presente em Receita(s).");
+
+        if (producedRecipeIngredientRepository.existsByIngredientId(ingredient.getId()))
+            throw new EntityExistsException("Ingrediente está presente em Receita(s) Produzida(s).");
 
         List<Stock> stocks = stockRepository.findAllByIngredientId(id);
         if (!stocks.isEmpty())
             stockRepository.deleteAll(stocks);
-
-        List<RecipeIngredient> recipeIngredients = recipeIngredientsRepository.findAllByIngredientId(id);
-        if (!recipeIngredients.isEmpty()) {
-            for (RecipeIngredient ri : recipeIngredients) {
-                recipeService.deleteIngredient(ri.getId());
-            }
-        }
 
         ingredientRepository.delete(ingredient);
     }

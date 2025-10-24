@@ -1,9 +1,6 @@
 package com.example.sistemagestao.services;
 
-import com.example.sistemagestao.domain.Bakery;
-import com.example.sistemagestao.domain.Ingredient;
-import com.example.sistemagestao.domain.RecipeIngredient;
-import com.example.sistemagestao.domain.Stock;
+import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.IngredientStockCheckDTO;
 import com.example.sistemagestao.dto.RecipeIngredientResponseDTO;
 import com.example.sistemagestao.dto.StockResponseDTO;
@@ -32,6 +29,10 @@ public class StockService {
     private RecipeRepository recipeRepository;
     @Autowired
     private RecipeIngredientsRepository recipeIngredientsRepository;
+    @Autowired
+    private ProducedRecipeRepository producedRecipeRepository;
+    @Autowired
+    private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
 
     public List<StockResponseDTO> getAll(){
         return stockRepository.findAllByOrderByIngredientNameAscBakeryNameAsc()
@@ -40,12 +41,18 @@ public class StockService {
     }
 
     public List<StockResponseDTO> getAllIngredientStocks(Long ingredientId) {
+        if(!ingredientRepository.existsById(ingredientId))
+            throw new EntityNotFoundException("Ingrediente não encontrado.");
+
         return stockRepository.findAllByIngredientIdOrderByBakeryNameAsc(ingredientId)
                 .stream().map(StockResponseDTO::new)
                 .toList();
     }
 
     public List<StockResponseDTO> getAllBakeryStocks(Long bakeryId) {
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
         return stockRepository.findAllByBakeryIdOrderByIngredientNameAsc(bakeryId)
                 .stream().map(StockResponseDTO::new)
                 .toList();
@@ -58,6 +65,9 @@ public class StockService {
     }
 
     public List<StockResponseDTO> searchBakeryStockByIngredientName(Long bakeryId, String ingredientName) {
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
         return stockRepository.findByIngredientNameContainingIgnoreCaseAndBakeryIdOrderByIngredientNameAsc(ingredientName, bakeryId)
                 .stream().map(StockResponseDTO::new)
                 .toList();
@@ -119,8 +129,39 @@ public class StockService {
         return result;
     }
 
+    public boolean isStockSufficientForRecipe(Long recipeId, Long bakeryId) {
+        if (!recipeRepository.existsById(recipeId)) {
+            throw new EntityNotFoundException("Receita não encontrada.");
+        }
+        List<RecipeIngredient> recipeIngredients = recipeIngredientsRepository.findAllByRecipeId(recipeId);
+        if (recipeIngredients.isEmpty()) {
+            throw new EntityNotFoundException("Ingredientes da receita não encontrados.");
+        }
+
+        for (RecipeIngredient recipeIngredient : recipeIngredients) {
+            Stock stock = stockRepository.findByIngredientIdAndBakeryId(
+                    recipeIngredient.getIngredient().getId(),
+                    bakeryId
+            );
+
+            double available = (stock != null) ? stock.getQuantity() : 0.0;
+            double required = recipeIngredient.getQuantity();
+
+            if (available < required) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Transactional
-    public void updateStockAfterUse(Long recipeId, Long bakeryId) {
+    public void updateStockAfterUse(Long recipeId, Long bakeryId, Double dose) {
+        if (!recipeRepository.existsById(recipeId))
+            throw new EntityNotFoundException("Receita não encontrada.");
+
+        if (!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
         List<RecipeIngredient> recipeIngredients = recipeIngredientsRepository.findAllByRecipeId(recipeId);
 
         if (recipeIngredients.isEmpty()) {
@@ -134,7 +175,7 @@ public class StockService {
             );
 
             double available = (stock != null) ? stock.getQuantity() : 0.0;
-            double required  = ri.getQuantity();
+            double required  = ri.getQuantity() * dose;
 
             if (available < required) {
                 throw new IllegalStateException(
@@ -154,7 +195,33 @@ public class StockService {
                         "Stock não encontrado para ingrediente '" + ri.getIngredient().getName() + "'."
                 );
             }
-            stock.setQuantity(stock.getQuantity() - ri.getQuantity());
+            stock.setQuantity(stock.getQuantity() - (ri.getQuantity() * dose));
+            stockRepository.save(stock);
+        }
+    }
+
+    @Transactional
+    public void updateStockAfterRecipeCancelled(Long producedRecipeId) {
+        ProducedRecipe producedRecipe = producedRecipeRepository.findById(producedRecipeId)
+                .orElseThrow(() -> new EntityNotFoundException("Receita produzida não encontrada."));
+
+        List<ProducedRecipeIngredient> recipeIngredients = producedRecipeIngredientRepository.findAllByProducedRecipe_Id(producedRecipeId);
+
+        if (recipeIngredients.isEmpty()) {
+            throw new EntityNotFoundException("Ingredientes da receita produzida não encontrados.");
+        }
+
+        for (ProducedRecipeIngredient pri : recipeIngredients) {
+            Stock stock = stockRepository.findByIngredientIdAndBakeryId(
+                    pri.getIngredient().getId(),
+                    producedRecipe.getBakery().getId()
+            );
+            if (stock == null) {
+                throw new EntityNotFoundException(
+                        "Stock não encontrado para ingrediente '" + pri.getIngredient().getName() + "'."
+                );
+            }
+            stock.setQuantity(stock.getQuantity() + pri.getQuantity());
             stockRepository.save(stock);
         }
     }

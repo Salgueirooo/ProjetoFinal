@@ -9,5 +9,6 @@ public interface ProducedRecipeRepository extends JpaRepository <ProducedRecipe,
     List<ProducedRecipe> findByBakeryIdAndFinalDateIsNullOrderByInitialDateAsc(Long bakeryId);
     List<ProducedRecipe> findByBakeryIdOrderByInitialDateDesc(Long bakeryId);
     List<ProducedRecipe> findByBakeryId(Long bakeryId);
-    List<ProducedRecipe> findAllByRecipeId(Long id);
+    //List<ProducedRecipe> findAllByRecipeId(Long id);
+    boolean existsByProductId(Long productId);
 }

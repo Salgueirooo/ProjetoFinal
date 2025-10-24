@@ -62,11 +62,6 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
-        List<ProducedRecipe> producedRecipes = producedRecipeRepository.findAllByRecipeId(id);
-        for (ProducedRecipe pr : producedRecipes) {
-            producedRecipeService.delete(pr.getId());
-        }
-
         List<RecipeIngredient> relatedIngredients = recipeIngredientsRepository.findAllByRecipeId(id);
         for (RecipeIngredient ri : relatedIngredients) {
             deleteIngredient(ri.getId());
@@ -109,6 +104,9 @@ public class RecipeService {
     }
 
     public List<RecipeIngredientResponseDTO> getAllRecipeIngredients (Long id) {
+        if(!recipeRepository.existsById(id))
+            throw new EntityNotFoundException("Receita não encontrada.");
+
         return recipeIngredientsRepository.findAllByRecipeId(id)
                 .stream()
                 .map(RecipeIngredientResponseDTO::new)
@@ -152,14 +150,6 @@ public class RecipeService {
     public void deleteIngredient(Long id) {
         RecipeIngredient recipeIngredient = recipeIngredientsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado."));
-
-        List<ProducedRecipeIngredient> producedRecipeIngredients = producedRecipeIngredientRepository
-                .findAllByProducedRecipe_Recipe_IdAndRecipeIngredient_Ingredient_Id(
-                        recipeIngredient.getRecipe().getId(),
-                        recipeIngredient.getIngredient().getId()
-                );
-
-        producedRecipeIngredientRepository.deleteAll(producedRecipeIngredients);
 
         recipeIngredientsRepository.delete(recipeIngredient);
     }

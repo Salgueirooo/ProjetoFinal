@@ -14,7 +14,7 @@ public record ProducedRecipeResponseDTO(
     public ProducedRecipeResponseDTO(ProducedRecipe producedRecipe) {
         this(
                 producedRecipe.getId(),
-                producedRecipe.getRecipe().getProduct().getName(),
+                producedRecipe.getProduct().getName(),
                 producedRecipe.getInitialDate(),
                 producedRecipe.getFinalDate(),
                 producedRecipe.getUser().getName()

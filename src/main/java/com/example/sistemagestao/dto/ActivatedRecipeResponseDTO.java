@@ -15,10 +15,10 @@ public record ActivatedRecipeResponseDTO(
 {
         public ActivatedRecipeResponseDTO(ProducedRecipe producedRecipe){
                 this(
-                        producedRecipe.getRecipe().getProduct().getName(),
+                        producedRecipe.getProduct().getName(),
                         producedRecipe.getInitialDate(),
                         producedRecipe.getUser().getName(),
-                        producedRecipe.getRecipe().getPreparation(),
+                        producedRecipe.getPreparation(),
                         producedRecipe.getIngredientsList().stream().map(ProducedRecipeIngredientResponseDTO::new).toList()
                 );
         }
