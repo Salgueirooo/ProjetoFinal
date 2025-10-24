@@ -2,15 +2,16 @@ package com.example.sistemagestao.services;
 
 import com.example.sistemagestao.domain.Category;
 import com.example.sistemagestao.domain.Product;
+import com.example.sistemagestao.dto.ProductDetailsResponseDTO;
 import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
+import com.example.sistemagestao.dto.ProductReviewResponseDTO;
 import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,6 +31,8 @@ public class ProductService {
     private ProducedRecipeRepository producedRecipeRepository;
     @Autowired
     private OrderDetailsRepository orderDetailsRepository;
+    @Autowired
+    private ProductReviewRepository productReviewRepository;
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -48,9 +51,19 @@ public class ProductService {
         productRepository.save(productData);
     }
 
-    public ProductResponseDTO getById(Long id){
-        return new ProductResponseDTO(productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado.")));
+    public ProductDetailsResponseDTO getDetailsById(Long id){
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
+
+        List<ProductReviewResponseDTO> reviews = productReviewRepository.findAllByOrderDetails_Product_IdOrderByDateTimeDesc(id)
+                .stream()
+                .map(ProductReviewResponseDTO::new)
+                .toList();
+
+        ProductResponseDTO productDTO = new ProductResponseDTO(product);
+
+        return new ProductDetailsResponseDTO(productDTO, reviews);
     }
 
     @Transactional
@@ -91,6 +104,17 @@ public class ProductService {
 
             product.setName(newData.name());
         }
+
+        productRepository.save(product);
+    }
+
+    @Transactional
+    public void updateProductAverageRating(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
+
+        Double avgRating = productReviewRepository.getAverageRatingByProductId(productId);
+        product.setRating(avgRating != null ? avgRating : 0.0);
 
         productRepository.save(product);
     }

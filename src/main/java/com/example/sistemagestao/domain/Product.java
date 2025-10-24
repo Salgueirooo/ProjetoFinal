@@ -1,8 +1,10 @@
 package com.example.sistemagestao.domain;
 
 import com.example.sistemagestao.dto.ProductRequestDTO;
+import com.example.sistemagestao.repositories.ProductReviewRepository;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Table(name = "product")
 @Entity
@@ -33,6 +35,7 @@ public class Product {
     private Integer iva;
     private Integer discount;
     private Boolean active;
+    private Double rating;
 
     public Product(ProductRequestDTO data, Category category) {
         this.name = data.name();
@@ -43,6 +46,7 @@ public class Product {
         this.discount = data.discount() != null ? data.discount() : 0;
         this.active = data.active() != null ? data.active() : true;
         this.category = category;
+        this.rating = 0.0;
     }
 
     public void updateProduct(ProductRequestDTO data, Category category) {

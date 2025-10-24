@@ -46,13 +46,13 @@ public class OrderController {
     }
 
     @PostMapping("/add-product")
-    public void addProduct(@RequestBody OrderDetailsRequestDTO data) {
-        orderService.addProduct(data);
+    public void addProduct(@RequestBody OrderDetailsRequestDTO data,  @AuthenticationPrincipal User user) {
+        orderService.addProduct(data, user);
     }
 
     @DeleteMapping("/remove-product")
-    public void removeProduct(@RequestBody OrderDetailsRequestDTO data) {
-        orderService.removeProduct(data);
+    public void removeProduct(@RequestBody OrderDetailsRequestDTO data, @AuthenticationPrincipal User user) {
+        orderService.removeProduct(data, user);
     }
 
     @GetMapping("/order-in-cart/{bakery_id}")

@@ -177,9 +177,12 @@ public class OrderService {
     }
 
     @Transactional
-    public void addProduct(OrderDetailsRequestDTO data) {
+    public void addProduct(OrderDetailsRequestDTO data, User user) {
         Order order = orderRepository.findById(data.orderId())
                 .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
+
+        if(!user.equals(order.getUser()))
+            throw new AuthorizationDeniedException("Acesso negado.");
 
         if (!order.getOrderState().equals(OrderStates.INCART))
             throw new IllegalStateException("Não é possível adicionar um Produto a esta Encomenda.");
@@ -199,9 +202,12 @@ public class OrderService {
     }
 
     @Transactional
-    public void removeProduct(OrderDetailsRequestDTO data) {
+    public void removeProduct(OrderDetailsRequestDTO data, User user) {
         Order order = orderRepository.findById(data.orderId())
                 .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
+
+        if(!user.equals(order.getUser()))
+            throw new AuthorizationDeniedException("Acesso negado.");
 
         if (!order.getOrderState().equals(OrderStates.INCART))
             throw new IllegalStateException("Não é possível remover um Produto desta Encomenda.");

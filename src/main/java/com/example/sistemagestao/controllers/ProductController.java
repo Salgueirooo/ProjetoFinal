@@ -1,11 +1,10 @@
 package com.example.sistemagestao.controllers;
 
-import com.example.sistemagestao.domain.Product;
+import com.example.sistemagestao.dto.ProductDetailsResponseDTO;
 import com.example.sistemagestao.dto.ProductRequestDTO;
 import com.example.sistemagestao.dto.ProductResponseDTO;
 import com.example.sistemagestao.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +22,8 @@ public class ProductController {
     }
 
     @GetMapping("/get/{id}")
-    public ProductResponseDTO getProductById(@PathVariable Long id) {
-        return productService.getById(id);
+    public ProductDetailsResponseDTO getProductById(@PathVariable Long id) {
+        return productService.getDetailsById(id);
     }
 
     @PutMapping("/update/{id}")

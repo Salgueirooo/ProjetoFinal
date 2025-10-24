@@ -45,13 +45,13 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/order/make",
                                 "/api/order/cancel/*"
-
                         )
                         .hasRole("CLIENT")
 
                         .requestMatchers(
                                 "/api/order/add-product",
-                                "/api/order/remove-product"
+                                "/api/order/remove-product",
+                                "/api/product-review/**"
                                 )
                         .hasRole("CLIENT")
 
