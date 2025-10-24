@@ -46,13 +46,11 @@ public class Product {
     }
 
     public void updateProduct(ProductRequestDTO data, Category category) {
-        if (data.name() != null) this.name = data.name();
         if (data.description() != null) this.description = data.description();
         if (data.price() != null) this.price = data.price();
         if (data.image() != null) this.image = data.image();
         if (data.iva() != null) this.iva = data.iva();
         if (data.discount() != null) this.discount = data.discount();
-        if (data.active() != null) this.active = data.active();
         if (category != null) this.category = category;
     }
 
