@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Table(name = "orders")
-@Entity
+@Entity(name = "OrderEntity")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -1,5 +1,6 @@
 package com.example.sistemagestao.infra.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,13 +24,23 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
+                .cors(cors -> cors.configure(httpSecurity))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+                            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+                            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+                            response.sendError(401, "Unauthorized");
+                        })
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
-                                "/api/auth/register-client")
+                                "/api/auth/register-client",
+                                "/api/initiallize")
                         .permitAll()
 
                         .requestMatchers(HttpMethod.GET,
@@ -38,7 +49,8 @@ public class SecurityConfiguration {
                                 "/api/product/get/*",
                                 "/api/product/search-active",
                                 "/api/order/order-in-cart/*",
-                                "/api/order/all-by-user/*"
+                                "/api/order/all-by-user/*",
+                                "/api/statistics/orders-user/*"
                         )
                         .hasRole("CLIENT")
 
@@ -82,7 +94,8 @@ public class SecurityConfiguration {
                                 "/api/recipe/**",
                                 "/api/stock/**",
                                 "/api/user/**",
-                                "/api/order/**"
+                                "/api/order/**",
+                                "/api/statistics/**"
                         )
                         .hasRole("ADMIN")
 

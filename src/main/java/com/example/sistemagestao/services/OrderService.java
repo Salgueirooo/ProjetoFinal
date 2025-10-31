@@ -91,8 +91,8 @@ public class OrderService {
             throw new IllegalArgumentException("A encomenda não tem produtos.");
 
         long hoursBetween = ChronoUnit.HOURS.between(now, orderDate);
-        if (hoursBetween < 24) {
-            throw new IllegalStateException("A data da encomenda deve ter pelo menos 24 horas de antecedência.");
+        if (hoursBetween < 48) {
+            throw new IllegalStateException("A data da encomenda deve ter pelo menos 48 horas de antecedência.");
         }
 
         updateUnitaryPrices(order.getId());
@@ -117,8 +117,15 @@ public class OrderService {
         if (order.getOrderState().equals(OrderStates.CANCELLED))
             throw new IllegalStateException("A Encomenda já foi cancelada.");
 
-        if (!order.getOrderState().equals(OrderStates.PENDING))
+        if (!order.getOrderState().equals(OrderStates.PENDING) && !order.getOrderState().equals(OrderStates.ACCEPTED))
             throw new IllegalStateException("Não foi possível cancelar esta Encomenda.");
+
+        if (order.getOrderState().equals(OrderStates.ACCEPTED)){
+            long hoursBetween = ChronoUnit.HOURS.between(LocalDateTime.now(), order.getDate());
+            if (hoursBetween < 24) {
+                throw new IllegalStateException("Só é possível cancelar esta Encomenda com 24h de antecedência.");
+            }
+        }
 
         order.setOrderState(OrderStates.CANCELLED);
         orderRepository.save(order);
