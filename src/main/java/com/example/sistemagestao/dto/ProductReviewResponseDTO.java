@@ -2,11 +2,9 @@ package com.example.sistemagestao.dto;
 
 import com.example.sistemagestao.domain.ProductReview;
 
-import java.time.LocalDateTime;
-
 public record ProductReviewResponseDTO(
         Long id,
-        LocalDateTime dateTime,
+        String dateTime,
         String userName,
         Integer rating,
         String review
@@ -14,7 +12,7 @@ public record ProductReviewResponseDTO(
     public ProductReviewResponseDTO(ProductReview review) {
         this(
                 review.getId(),
-                review.getDateTime(),
+                review.getDateTime().toString().substring(0, 16).replace("T", " "),
                 review.getOrderDetails().getOrder().getUser().getName(),
                 review.getRating(),
                 review.getReview()

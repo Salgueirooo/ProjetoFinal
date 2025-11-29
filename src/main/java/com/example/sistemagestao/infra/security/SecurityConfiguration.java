@@ -14,6 +14,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -29,9 +35,6 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-                            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-                            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
                             response.sendError(401, "Unauthorized");
                         })
                 )
@@ -40,7 +43,8 @@ public class SecurityConfiguration {
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/register-client",
-                                "/api/initiallize")
+                                "/api/initialize",
+                                "/uploads/**")
                         .permitAll()
 
                         .requestMatchers(HttpMethod.GET,
@@ -56,7 +60,8 @@ public class SecurityConfiguration {
 
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/order/make",
-                                "/api/order/cancel/*"
+                                "/api/order/cancel/*",
+                                "/api/order/upgrade-product"
                         )
                         .hasRole("CLIENT")
 

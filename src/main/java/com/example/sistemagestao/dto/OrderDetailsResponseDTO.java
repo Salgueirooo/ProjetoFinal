@@ -4,6 +4,7 @@ import com.example.sistemagestao.domain.OrderDetails;
 
 public record OrderDetailsResponseDTO(
         Long id,
+        Long productId,
         String productName,
         int quantity,
         Double price,
@@ -11,11 +12,12 @@ public record OrderDetailsResponseDTO(
 ) {
     public OrderDetailsResponseDTO (OrderDetails orderDetails) {
         this(
-                orderDetails.getId(),
-                orderDetails.getProduct().getName(),
-                orderDetails.getQuantity(),
-                orderDetails.getPrice(),
-                orderDetails.getDiscount()
+            orderDetails.getId(),
+            orderDetails.getProduct().getId(),
+            orderDetails.getProduct().getName(),
+            orderDetails.getQuantity(),
+            orderDetails.getPrice(),
+            orderDetails.getDiscount()
         );
     }
 }

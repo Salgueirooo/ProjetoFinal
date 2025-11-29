@@ -10,15 +10,17 @@ public record ActivatedRecipeResponseDTO(
         LocalDateTime initialDate,
         String userName,
         String preparation,
+        Double dose,
         List<ProducedRecipeIngredientResponseDTO> ingredientsList
         )
 {
         public ActivatedRecipeResponseDTO(ProducedRecipe producedRecipe){
                 this(
-                        producedRecipe.getProduct().getName(),
+                        producedRecipe.getRecipe().getProduct().getName(),
                         producedRecipe.getInitialDate(),
                         producedRecipe.getUser().getName(),
                         producedRecipe.getPreparation(),
+                        producedRecipe.getDose(),
                         producedRecipe.getIngredientsList().stream().map(ProducedRecipeIngredientResponseDTO::new).toList()
                 );
         }

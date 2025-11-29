@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record ProducedRecipeResponseDTO(
         Long id,
         String productName,
+        Double dose,
         LocalDateTime initialDate,
         LocalDateTime finalDate,
         String userName)
@@ -14,7 +15,8 @@ public record ProducedRecipeResponseDTO(
     public ProducedRecipeResponseDTO(ProducedRecipe producedRecipe) {
         this(
                 producedRecipe.getId(),
-                producedRecipe.getProduct().getName(),
+                producedRecipe.getRecipe().getProduct().getName(),
+                producedRecipe.getDose(),
                 producedRecipe.getInitialDate(),
                 producedRecipe.getFinalDate(),
                 producedRecipe.getUser().getName()

@@ -22,12 +22,12 @@ public class BakeryController {
     }
 
     @PostMapping("/add")
-    public void addBakery(@RequestBody BakeryRequestDTO data){
+    public void addBakery(@ModelAttribute BakeryRequestDTO data){
         bakeryService.add(data);
     }
 
     @PutMapping("/update/{id}")
-    public void updateBakery(@PathVariable Long id, @RequestBody BakeryRequestDTO newData){
+    public void updateBakery(@PathVariable Long id, @ModelAttribute BakeryRequestDTO newData){
         bakeryService.update(id, newData);
     }
 

@@ -16,17 +16,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     //carrinho
     Order findByUserIdAndBakery_IdAndOrderState(Long userId, Long bakeryId, OrderStates orderState);
 
-    //todas as do utilizador menos as do carrinho
-    List<Order> findAllByUserIdAndBakery_IdAndOrderStateNotOrderByDateDesc(Long userId, Long bakeryId, OrderStates excludedState);
+    //todas as do utilizador exceto as do carrinho a partir de uma data
+    List<Order> findAllByUserIdAndBakery_IdAndOrderStateNotInAndDateGreaterThanEqualOrderByDateAsc(Long userId, Long bakeryId, List<OrderStates> excludedState, LocalDateTime minDate);
+
+    //todas as do utilizador exceto as do carrinho num certo dia
+    List<Order> findAllByUserIdAndBakery_IdAndOrderStateNotAndDateBetweenOrderByDateAsc(Long userId, Long bakeryId, OrderStates excludedState, LocalDateTime minDate,  LocalDateTime maxDate);
 
     //todas as da pastelaria por estado da encomenda e data (aceites)
     List<Order> findAllByBakery_IdAndOrderStateAndDateBetweenOrderByDateAsc(Long bakeryId, OrderStates orderStates, LocalDateTime initialDate, LocalDateTime endDate);
 
     //todas as da pastelaria por estado da encomenda (pendentes)
-    List<Order> findAllByBakery_IdAndOrderStateOrderByRequestDateAsc(Long bakeryId, OrderStates orderStates);
+    List<Order> findAllByBakery_IdAndOrderStateOrderByDateAsc(Long bakeryId, OrderStates orderStates);
 
     //todas as da pastelaria por nome do utilizador, sem as do carrinho por data
-    List<Order> findAllByBakery_IdAndUserNameContainsIgnoreCaseAndOrderStateNotAndDateBetweenOrderByDateAsc(Long bakeryId, String userName, OrderStates excludedState, LocalDateTime initialDate, LocalDateTime endDate);
+    List<Order> findAllByBakery_IdAndUser_EmailAndOrderStateNotAndDateBetweenOrderByDateAsc(Long bakeryId, String email, OrderStates excludedState, LocalDateTime initialDate, LocalDateTime endDate);
 
     //todas as da pastelaria por estado da encomenda, data e nome do utilizador
     List<Order> findAllByBakery_IdAndUserNameContainsIgnoreCaseAndOrderStateAndDateBetweenOrderByDateAsc(Long bakeryId, String userName, OrderStates orderStates, LocalDateTime initialDate, LocalDateTime endDate);

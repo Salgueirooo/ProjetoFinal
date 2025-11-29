@@ -33,10 +33,8 @@ public class ProducedRecipeService {
 
     @Transactional
     public void add(ProducedRecipeRequestDTO data, User user) {
-        Product product = productRepository.findById(data.productId())
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
-        Recipe recipe = recipeRepository.findByProduct_id(data.productId())
+        Recipe recipe = recipeRepository.findById(data.recipeId())
                 .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
         Bakery bakery = bakeryRepository.findById(data.bakeryId())
@@ -49,7 +47,7 @@ public class ProducedRecipeService {
             throw new IllegalStateException("A Pastelaria não tem stock suficiente para produzir esta Receita.");
         }
 
-        ProducedRecipe producedRecipe = new ProducedRecipe(product, bakery, recipe.getPreparation(), user);
+        ProducedRecipe producedRecipe = new ProducedRecipe(recipe, bakery, data.dose(), user);
 
         recipe.getIngredientsList().forEach(ri -> {
             ProducedRecipeIngredient pri = new ProducedRecipeIngredient(producedRecipe, ri.getIngredient(), ri.getQuantity() * data.dose());

@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ProductReviewService {
@@ -64,5 +66,19 @@ public class ProductReviewService {
         productReviewRepository.delete(productReview);
 
         productService.updateProductAverageRating(product.getId());
+    }
+
+    public List<ProductReviewResponseDTO> getProductReviews(Long productId) {
+        if (!productRepository.existsById(productId))
+            throw new EntityNotFoundException("Produto não encontrado.");
+
+        return productReviewRepository.findAllByOrderDetails_Product_IdOrderByDateTimeDesc(productId)
+                .stream()
+                .map(ProductReviewResponseDTO::new)
+                .toList();
+    }
+
+    public boolean wasReviewed(Long orderDetailsId){
+        return productReviewRepository.existsByOrderDetails_Id(orderDetailsId);
     }
 }

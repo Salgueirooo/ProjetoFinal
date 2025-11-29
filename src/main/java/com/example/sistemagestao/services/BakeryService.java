@@ -11,9 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,12 +49,26 @@ public class BakeryService {
             throw new EntityExistsException("Já existe uma Pastelaria com esse nome.");
         }
 
-        Bakery bakery = new Bakery(data);
+        String uploadDir = "uploads/bakeries/";
+        String fileName = UUID.randomUUID() + "_" + data.logo().getOriginalFilename();
+        Path uploadPath = Paths.get(uploadDir);
+
+        try {
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Files.copy(data.logo().getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao guardar imagem do logotipo", e);
+        }
+
+        String logoPath = "/uploads/bakeries/" + fileName;
+
+        Bakery bakery = new Bakery(data, logoPath);
         bakeryRepository.save(bakery);
 
         List<Ingredient> ingredients = ingredientRepository.findAll();
-        if (ingredients.isEmpty()) return;
-
         List<Stock> stocks = ingredients
                 .stream()
                 .map(ingredient -> new Stock(ingredient, bakery, 0.0))
@@ -56,8 +77,6 @@ public class BakeryService {
         stockRepository.saveAll(stocks);
 
         List<User> userList = userRepository.findAll();
-        if (userList.isEmpty()) return;
-
         for (User user : userList) {
             orderService.initialize(bakery.getId(), user);
         }
@@ -72,7 +91,35 @@ public class BakeryService {
             throw new EntityExistsException("Já existe uma Pastelaria com esse nome.");
         }
 
-        bakery.updateBakery(newData);
+        String logoPath = bakery.getLogo();
+
+        MultipartFile newLogo = newData.logo();
+        if (newLogo != null && !newLogo.isEmpty()) {
+            String uploadDir = "uploads/bakeries/";
+            String fileName = UUID.randomUUID() + "_" + newLogo.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                if (logoPath != null && !logoPath.isBlank()) {
+                    Path oldFile = Paths.get("." + logoPath);
+                    if (Files.exists(oldFile)) {
+                        Files.delete(oldFile);
+                    }
+                }
+
+                Files.copy(newLogo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                logoPath = "/uploads/bakeries/" + fileName;
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+            }
+        }
+
+        bakery.updateBakery(newData, logoPath);
         bakeryRepository.save(bakery);
     }
 
@@ -83,6 +130,18 @@ public class BakeryService {
 
         if(stockRepository.existsByBakeryIdAndQuantityGreaterThan(id, 0.0))
             throw new IllegalStateException("Existe stock de ingredientes nesta pastelaria.");
+
+        String logoPath = bakery.getLogo();
+        if (logoPath != null && !logoPath.isBlank()) {
+            try {
+                Path filePath = Paths.get("." + logoPath);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao eliminar o logotipo da pastelaria.", e);
+            }
+        }
 
         List<ProducedRecipe> producedRecipes = producedRecipeRepository.findByBakeryId(id);
 

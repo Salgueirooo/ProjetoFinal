@@ -12,7 +12,7 @@ import java.util.Arrays;
 public enum MeasurentUnits {
     KG("kg", "Quilogramas"),
     LITRE("L", "Litros"),
-    UNITS("unidades", "Unidades");
+    UNITS("unid.", "Unidades");
 
     private String symbol;
     private String description;

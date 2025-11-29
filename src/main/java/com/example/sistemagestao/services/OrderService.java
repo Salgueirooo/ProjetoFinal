@@ -14,9 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +31,8 @@ public class OrderService {
     private OrderDetailsRepository orderDetailsRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductReviewService productReviewService;
 
     @Transactional
     public void initialize(Long bakeryId, User user) {
@@ -91,8 +92,8 @@ public class OrderService {
             throw new IllegalArgumentException("A encomenda não tem produtos.");
 
         long hoursBetween = ChronoUnit.HOURS.between(now, orderDate);
-        if (hoursBetween < 48) {
-            throw new IllegalStateException("A data da encomenda deve ter pelo menos 48 horas de antecedência.");
+        if (hoursBetween < 24) {
+            throw new IllegalStateException("A data da encomenda deve ter pelo menos 24 horas de antecedência.");
         }
 
         updateUnitaryPrices(order.getId());
@@ -132,18 +133,20 @@ public class OrderService {
     }
 
     @Transactional
-    public void setAcceptanceStatus(Long id, boolean acceptanceStatus) {
+    public void setAcceptanceStatus(Long id, OrderUpdateAcceptanceDTO data) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
 
         if (!order.getOrderState().equals(OrderStates.PENDING))
             throw new IllegalStateException("Não é possível definir o estado de aceitação desta Encomenda.");
 
-        if (acceptanceStatus) {
+        if (data.acceptance()) {
             order.setOrderState(OrderStates.ACCEPTED);
         } else {
             order.setOrderState(OrderStates.REJECTED);
         }
+
+        order.setStaffNotes(data.staffNotes());
 
         orderRepository.save(order);
     }
@@ -185,14 +188,11 @@ public class OrderService {
 
     @Transactional
     public void addProduct(OrderDetailsRequestDTO data, User user) {
-        Order order = orderRepository.findById(data.orderId())
-                .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
 
-        if(!user.equals(order.getUser()))
-            throw new AuthorizationDeniedException("Acesso negado.");
+        Order order = orderRepository.findByUserIdAndBakery_IdAndOrderState(user.getId(), data.bakeryId(), OrderStates.INCART);
 
-        if (!order.getOrderState().equals(OrderStates.INCART))
-            throw new IllegalStateException("Não é possível adicionar um Produto a esta Encomenda.");
+        if (order == null)
+            throw new EntityNotFoundException("Carrinho não encontrado.");
 
         Product product = productRepository.findById(data.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
@@ -210,14 +210,10 @@ public class OrderService {
 
     @Transactional
     public void removeProduct(OrderDetailsRequestDTO data, User user) {
-        Order order = orderRepository.findById(data.orderId())
-                .orElseThrow(() -> new EntityNotFoundException("Encomenda não encontrada."));
+        Order order = orderRepository.findByUserIdAndBakery_IdAndOrderState(user.getId(), data.bakeryId(), OrderStates.INCART);
 
-        if(!user.equals(order.getUser()))
-            throw new AuthorizationDeniedException("Acesso negado.");
-
-        if (!order.getOrderState().equals(OrderStates.INCART))
-            throw new IllegalStateException("Não é possível remover um Produto desta Encomenda.");
+        if (order == null)
+            throw new EntityNotFoundException("Carrinho não encontrado.");
 
         Product product = productRepository.findById(data.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
@@ -235,6 +231,25 @@ public class OrderService {
         }
     }
 
+    @Transactional
+    public void upgradeQuantity(OrderDetailsUpgradeRequestDTO data, User user) {
+        OrderDetails orderDetails = orderDetailsRepository.findById(data.orderDetailsId())
+                .orElseThrow(() -> new EntityNotFoundException("Detalhes da Encomenda não encontrados."));
+
+        if(!user.equals(orderDetails.getOrder().getUser()))
+            throw new AuthorizationDeniedException("Acesso negado.");
+
+        if (!orderDetails.getOrder().getOrderState().equals(OrderStates.INCART))
+            throw new IllegalStateException("Não é possível alterar a quantidade de um Produto desta Encomenda.");
+
+        if (data.quantity() < 1) {
+            throw new IllegalArgumentException("A quantidade do Produto deve ser maior que zero.");
+        }
+
+        orderDetails.setQuantity(data.quantity());
+        orderDetailsRepository.save(orderDetails);
+    }
+
     public OrderInCartResponseDTO getOrderInCart(Long bakeryId, User user) {
         if(!userRepository.existsById(user.getId()))
             throw new EntityNotFoundException("Utilizador não encontrado.");
@@ -247,28 +262,76 @@ public class OrderService {
         ));
     }
 
-    public List<OrderResponseDTO> getAllOrdersByUser(Long bakeryId, User user) {
+    private OrderWReviewResponseDTO buildOrderWReviewDTO(Order order) {
+
+        List<OrderDetailsWReviewResponseDTO> details = order.getOrderDetails().stream()
+                .sorted(Comparator.comparing(od -> od.getProduct().getName().toLowerCase()))
+                .map(od -> {
+
+                    boolean wasReviewed = productReviewService.wasReviewed(
+                            od.getId()
+                    );
+
+                    return new OrderDetailsWReviewResponseDTO(
+                            od,
+                            wasReviewed
+                    );
+                })
+                .toList();
+
+        return new OrderWReviewResponseDTO(
+                order.getId(),
+                order.getUser().getName(),
+                order.getUser().getPhone_number(),
+                order.getDate(),
+                order.getRequestDate(),
+                order.getOrderState().getState(),
+                order.getClientNotes(),
+                order.getStaffNotes(),
+                details
+        );
+    }
+
+    public List<OrderWReviewResponseDTO> getAllOrdersByUser(Long bakeryId, User user) {
         if(!userRepository.existsById(user.getId()))
             throw new EntityNotFoundException("Utilizador não encontrado.");
 
         if(!bakeryRepository.existsById(bakeryId))
             throw new EntityNotFoundException("Pastelaria não encontrada.");
 
-        return orderRepository.findAllByUserIdAndBakery_IdAndOrderStateNotOrderByDateDesc(user.getId(), bakeryId, OrderStates.INCART)
+        LocalDateTime date = LocalDate.now().atStartOfDay();
+
+        return orderRepository.findAllByUserIdAndBakery_IdAndOrderStateNotInAndDateGreaterThanEqualOrderByDateAsc(user.getId(), bakeryId, List.of(OrderStates.INCART, OrderStates.CANCELLED), date)
                 .stream()
-                .map(OrderResponseDTO::new)
+                .map(this::buildOrderWReviewDTO)
                 .toList();
     }
 
-    public List<OrderResponseDTO> getAllOrdersByDayAndUsername(Long bakeryId, String username, LocalDate date) {
+    public List<OrderWReviewResponseDTO> searchOrdersByUser(Long bakeryId, User user, LocalDate date) {
+        if(!userRepository.existsById(user.getId()))
+            throw new EntityNotFoundException("Utilizador não encontrado.");
+
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
+        LocalDateTime startDate = date.atStartOfDay();
+        LocalDateTime endDate = date.atTime(LocalTime.MAX);
+
+        return orderRepository.findAllByUserIdAndBakery_IdAndOrderStateNotAndDateBetweenOrderByDateAsc(user.getId(), bakeryId, OrderStates.INCART, startDate, endDate)
+                .stream()
+                .map(this::buildOrderWReviewDTO)
+                .toList();
+    }
+
+    public List<OrderResponseDTO> getAllOrdersByDayAndEmail(Long bakeryId, String email, LocalDate date) {
         if(!bakeryRepository.existsById(bakeryId))
             throw new EntityNotFoundException("Pastelaria não encontrada.");
 
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
-        return orderRepository.findAllByBakery_IdAndUserNameContainsIgnoreCaseAndOrderStateNotAndDateBetweenOrderByDateAsc(
-                        bakeryId, username, OrderStates.INCART, startOfDay, endOfDay
+        return orderRepository.findAllByBakery_IdAndUser_EmailAndOrderStateNotAndDateBetweenOrderByDateAsc(
+                        bakeryId, email, OrderStates.INCART, startOfDay, endOfDay
                 )
                 .stream()
                 .map(OrderResponseDTO::new)
@@ -306,11 +369,41 @@ public class OrderService {
                 .toList();
     }
 
+    public List<OrderResponseDTO> getAllReadyOrdersByDay(Long bakeryId, LocalDate date) {
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        return orderRepository.findAllByBakery_IdAndOrderStateAndDateBetweenOrderByDateAsc(
+                        bakeryId, OrderStates.READY, startOfDay, endOfDay
+                )
+                .stream()
+                .map(OrderResponseDTO::new)
+                .toList();
+    }
+
+    public List<OrderResponseDTO> getAllReadyOrdersByDayAndUsername(Long bakeryId, String username, LocalDate date) {
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+        return orderRepository.findAllByBakery_IdAndUserNameContainsIgnoreCaseAndOrderStateAndDateBetweenOrderByDateAsc(
+                        bakeryId, username, OrderStates.READY, startOfDay, endOfDay
+                )
+                .stream()
+                .map(OrderResponseDTO::new)
+                .toList();
+    }
+
     public List<OrderResponseDTO> getAllPendingOrders(Long bakeryId) {
         if(!bakeryRepository.existsById(bakeryId))
             throw new EntityNotFoundException("Pastelaria não encontrada.");
 
-        return orderRepository.findAllByBakery_IdAndOrderStateOrderByRequestDateAsc(bakeryId, OrderStates.PENDING)
+        return orderRepository.findAllByBakery_IdAndOrderStateOrderByDateAsc(bakeryId, OrderStates.PENDING)
                 .stream()
                 .map(OrderResponseDTO::new)
                 .toList();

@@ -1,10 +1,7 @@
 package com.example.sistemagestao.controllers;
 
 import com.example.sistemagestao.domain.User;
-import com.example.sistemagestao.dto.OrderDetailsRequestDTO;
-import com.example.sistemagestao.dto.OrderInCartResponseDTO;
-import com.example.sistemagestao.dto.OrderRequestDTO;
-import com.example.sistemagestao.dto.OrderResponseDTO;
+import com.example.sistemagestao.dto.*;
 import com.example.sistemagestao.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,8 +28,8 @@ public class OrderController {
     }
 
     @PutMapping("/set-acceptance-status/{id}")
-    public void setAcceptanceStatus(@PathVariable Long id, @RequestBody boolean acceptanceStatus) {
-        orderService.setAcceptanceStatus(id, acceptanceStatus);
+    public void setAcceptanceStatus(@PathVariable Long id, @RequestBody OrderUpdateAcceptanceDTO data) {
+        orderService.setAcceptanceStatus(id, data);
     }
 
     @PutMapping("/set-order-ready/{id}")
@@ -55,19 +52,29 @@ public class OrderController {
         orderService.removeProduct(data, user);
     }
 
+    @PutMapping("/upgrade-product")
+    public void upgradeProduct(@RequestBody OrderDetailsUpgradeRequestDTO data, @AuthenticationPrincipal User user) {
+        orderService.upgradeQuantity(data, user);
+    }
+
     @GetMapping("/order-in-cart/{bakery_id}")
     public OrderInCartResponseDTO getOrderInCart(@PathVariable Long bakery_id, @AuthenticationPrincipal User user) {
         return orderService.getOrderInCart(bakery_id, user);
     }
 
     @GetMapping("/all-by-user/{bakery_id}")
-    public List<OrderResponseDTO> getAllByUser(@PathVariable Long bakery_id, @AuthenticationPrincipal User user) {
+    public List<OrderWReviewResponseDTO> getAllByUser(@PathVariable Long bakery_id, @AuthenticationPrincipal User user) {
         return orderService.getAllOrdersByUser(bakery_id, user);
     }
 
-    @GetMapping("/search-username-day/{bakery_id}")
-    public List<OrderResponseDTO> getAllByUserAndDay(@PathVariable Long bakery_id, @RequestParam String username, @RequestParam LocalDate date) {
-        return orderService.getAllOrdersByDayAndUsername(bakery_id, username, date);
+    @GetMapping("/search-day-by-user/{bakery_id}")
+    public List<OrderWReviewResponseDTO> searchOrdersByUser(@PathVariable Long bakery_id, @RequestParam LocalDate date, @AuthenticationPrincipal User user) {
+        return orderService.searchOrdersByUser(bakery_id, user, date);
+    }
+
+    @GetMapping("/search-email-day/{bakery_id}")
+    public List<OrderResponseDTO> getAllByEmailAndDay(@PathVariable Long bakery_id, @RequestParam String email, @RequestParam LocalDate date) {
+        return orderService.getAllOrdersByDayAndEmail(bakery_id, email, date);
     }
 
     @GetMapping("/get-accepted-by-date/{bakery_id}")
@@ -77,6 +84,16 @@ public class OrderController {
         }
         else {
             return orderService.getAllAcceptedOrdersByDayAndUsername(bakery_id, username, date);
+        }
+    }
+
+    @GetMapping("/get-ready-by-date/{bakery_id}")
+    public List<OrderResponseDTO> getReadyByDate(@PathVariable Long bakery_id, @RequestParam LocalDate date,  @RequestParam(required = false) String username) {
+        if(username == null){
+            return orderService.getAllReadyOrdersByDay(bakery_id, date);
+        }
+        else {
+            return orderService.getAllReadyOrdersByDayAndUsername(bakery_id, username, date);
         }
     }
 

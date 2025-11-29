@@ -96,7 +96,7 @@ public class ProductService {
             if (recipeRepository.existsByProductId(product.getId()))
                 throw new EntityExistsException("Este produto já tem uma Receita associada.");
 
-            if (producedRecipeRepository.existsByProductId(product.getId()))
+            if (producedRecipeRepository.existsByRecipe_Product_Id(product.getId()))
                 throw new EntityExistsException("Já foram produzidas receitas deste Produto.");
 
             if (orderDetailsRepository.existsByProductId(product.getId()))

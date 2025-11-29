@@ -3,6 +3,7 @@ package com.example.sistemagestao.domain;
 import com.example.sistemagestao.dto.BakeryRequestDTO;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Table(name = "bakery")
 @Entity
@@ -31,17 +32,17 @@ public class Bakery {
     @Column(nullable = false)
     private String address;
 
-    public Bakery(BakeryRequestDTO data) {
+    public Bakery(BakeryRequestDTO data, String logo) {
         this.name = data.name();
-        this.logo = data.logo();
+        this.logo = logo;
         this.phone_number = data.phone_number();
         this.email = data.email();
         this.address = data.address();
     }
 
-    public void updateBakery(BakeryRequestDTO data) {
+    public void updateBakery(BakeryRequestDTO data, String logo) {
         if (data.name() != null) this.name = data.name();
-        if(data.logo() != null) this.logo = data.logo();
+        if(data.logo() != null) this.logo = logo;
         if (data.phone_number() != null) this.phone_number = data.phone_number();
         if (data.email() != null) this.email = data.email();
         if (data.address() != null) this.address = data.address();

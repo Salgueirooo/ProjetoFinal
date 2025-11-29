@@ -6,6 +6,7 @@ import java.util.List;
 
 public record RecipeResponseDTO(
         Long id,
+        Long productId,
         String productName,
         String image,
         String preparation,
@@ -14,6 +15,7 @@ public record RecipeResponseDTO(
     public RecipeResponseDTO (Recipe recipe) {
         this(
             recipe.getId(),
+            recipe.getProduct().getId(),
             recipe.getProduct().getName(),
             recipe.getProduct().getImage(),
             recipe.getPreparation(),

@@ -21,8 +21,8 @@ public class ProducedRecipe {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @JoinColumn(name = "recipe_id", nullable = false)
+    private Recipe recipe;
 
     @Column(nullable = false)
     private String preparation;
@@ -30,6 +30,9 @@ public class ProducedRecipe {
     @ManyToOne
     @JoinColumn(name = "bakery_id", nullable = false)
     private Bakery bakery;
+
+    @Column(nullable = false)
+    private Double dose;
 
     @Column(nullable = false)
     private LocalDateTime initialDate;
@@ -43,10 +46,11 @@ public class ProducedRecipe {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public ProducedRecipe(Product product, Bakery bakery, String preparation, User user) {
-        this.product = product;
+    public ProducedRecipe(Recipe recipe, Bakery bakery, Double dose, User user) {
+        this.recipe = recipe;
         this.bakery = bakery;
-        this.preparation = preparation;
+        this.dose = dose;
+        this.preparation = recipe.getPreparation();
         this.initialDate = LocalDateTime.now();
         this.finalDate = null;
         this.user = user;

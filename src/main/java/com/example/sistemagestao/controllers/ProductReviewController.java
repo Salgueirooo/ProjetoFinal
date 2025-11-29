@@ -2,10 +2,13 @@ package com.example.sistemagestao.controllers;
 
 import com.example.sistemagestao.domain.User;
 import com.example.sistemagestao.dto.ProductReviewRequestDTO;
+import com.example.sistemagestao.dto.ProductReviewResponseDTO;
 import com.example.sistemagestao.services.ProductReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/product-review")
@@ -22,5 +25,10 @@ public class ProductReviewController {
     @DeleteMapping("/delete/{id}")
     public void deleteProductReview(@PathVariable Long id, @AuthenticationPrincipal User user) {
         productReviewService.deleteReview(id, user);
+    }
+
+    @GetMapping("/get/{productId}")
+    public List<ProductReviewResponseDTO> getProductReviews(@PathVariable Long productId) {
+        return  productReviewService.getProductReviews(productId);
     }
 }
