@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -28,7 +29,7 @@ public class ProducedRecipeController {
         producedRecipeService.completeProduction(id);
     }
 
-    @PutMapping("/cancel-production/{id}")
+    @DeleteMapping("/cancel-production/{id}")
     public void cancelProduction(@PathVariable Long id) {
         producedRecipeService.cancelRecipe(id);
     }
@@ -48,9 +49,9 @@ public class ProducedRecipeController {
         return producedRecipeService.getActiveRecipes(bakeryId);
     }
 
-    @GetMapping("/get-all/{bakeryId}")
-    public List<ProducedRecipeResponseDTO> getAllByBakery(@PathVariable Long bakeryId) {
-        return producedRecipeService.getAllByBakery(bakeryId);
+    @GetMapping("/get-all-by-date/{bakeryId}")
+    public List<ProducedRecipeResponseDTO> getAllByBakeryAndDate(@PathVariable Long bakeryId, @RequestParam LocalDate date) {
+        return producedRecipeService.getAllByBakeryAndDate(bakeryId, date);
     }
 
 }

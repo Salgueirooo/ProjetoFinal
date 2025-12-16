@@ -3,16 +3,16 @@ package com.example.sistemagestao.domain;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public enum Roles {
     ADMIN("ADMIN", "Administrador"),
     CONFECTIONER("CONFECTIONER", "Pasteleiro"),
     COUNTER_EMPLOYEE("COUNTER_EMPLOYEE", "Empregado de Balcão"),
-    CLIENT("COUNTER_EMPLOYEE", "Cliente");
+    CLIENT("CLIENT", "Cliente");
 
-    private String role;
-    private String description;
+    private final String role;
+    private final String description;
 }

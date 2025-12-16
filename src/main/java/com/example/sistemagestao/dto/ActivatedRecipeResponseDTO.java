@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record ActivatedRecipeResponseDTO(
+        Long id,
         String productName,
+        String productImage,
         LocalDateTime initialDate,
         String userName,
         String preparation,
@@ -16,7 +18,9 @@ public record ActivatedRecipeResponseDTO(
 {
         public ActivatedRecipeResponseDTO(ProducedRecipe producedRecipe){
                 this(
+                        producedRecipe.getId(),
                         producedRecipe.getRecipe().getProduct().getName(),
+                        producedRecipe.getRecipe().getProduct().getImage(),
                         producedRecipe.getInitialDate(),
                         producedRecipe.getUser().getName(),
                         producedRecipe.getPreparation(),

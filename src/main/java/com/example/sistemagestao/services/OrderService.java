@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -33,6 +34,8 @@ public class OrderService {
     private UserRepository userRepository;
     @Autowired
     private ProductReviewService productReviewService;
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public void initialize(Long bakeryId, User user) {
@@ -105,6 +108,14 @@ public class OrderService {
         orderRepository.save(order);
 
         initialize(order.getBakery().getId(), user);
+
+        notificationService.sendToRole(
+                "ROLE_ADMIN",
+                "Nova Encomenda!\nDisponível para aprovação na opção de ",
+                "Encomendas Pendentes.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.PendentOrders.getPath())
+        );
     }
 
     @Transactional
@@ -123,13 +134,33 @@ public class OrderService {
 
         if (order.getOrderState().equals(OrderStates.ACCEPTED)){
             long hoursBetween = ChronoUnit.HOURS.between(LocalDateTime.now(), order.getDate());
-            if (hoursBetween < 24) {
-                throw new IllegalStateException("Só é possível cancelar esta Encomenda com 24h de antecedência.");
+            if (hoursBetween < 48) {
+                throw new IllegalStateException("Só é possível cancelar uma Encomenda com 48h de antecedência.");
             }
         }
 
+        OrderStates lastOrderState = order.getOrderState();
+
         order.setOrderState(OrderStates.CANCELLED);
         orderRepository.save(order);
+
+        notificationService.sendToRole(
+                "ROLE_COUNTER_EMPLOYEE",
+                "Encomenda #" + order.getId() + " Cancelada!\nInformações disponíveis ",
+                "aqui.",
+                order.getBakery(),
+                lastOrderState.equals(OrderStates.PENDING) ? (
+                        List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                                "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.PendentOrders.getPath())
+                    ) : (
+                        List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                                "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ConfirmedOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10))
+                    )
+
+        );
     }
 
     @Transactional
@@ -149,6 +180,34 @@ public class OrderService {
         order.setStaffNotes(data.staffNotes());
 
         orderRepository.save(order);
+
+        notificationService.sendToUser(
+                order.getUser().getEmail(),
+                data.acceptance() ? "Encomenda #" + order.getId() + " foi aceite!\nAcompanhe " : "Encomenda #" + order.getId() + " foi recusada! Acompanhe ",
+                "aqui.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchMyOrders.getPath()
+                        + "?date=" + order.getDate().toString().substring(0, 10),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.Accompany.getPath())
+        );
+
+        notificationService.sendToRole(
+                "ROLE_COUNTER_EMPLOYEE",
+                data.acceptance() ? "Encomenda #" + order.getId() + " foi aceite!\nInformações disponíveis " : "Encomenda #" + order.getId() + "foi recusada! Informações disponíveis ",
+                "aqui.",
+                order.getBakery(),
+                data.acceptance() ? (
+                        List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                                "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ConfirmedOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10),
+                                "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.PendentOrders.getPath())
+                    ) : (
+                        List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                        + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                                "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.PendentOrders.getPath())
+                    )
+        );
     }
 
     @Transactional
@@ -161,6 +220,29 @@ public class OrderService {
 
         order.setOrderState(OrderStates.READY);
         orderRepository.save(order);
+
+        notificationService.sendToUser(
+                order.getUser().getEmail(),
+                "Encomenda #" + order.getId() + " está pronta para ser levantada!\nAcompanhe ",
+                "aqui.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchMyOrders.getPath()
+                        + "?date=" + order.getDate().toString().substring(0, 10),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.Accompany.getPath())
+        );
+
+        notificationService.sendToRole(
+                "ROLE_COUNTER_EMPLOYEE",
+                "Encomenda #" + order.getId() + " está pronta para ser levantada!\nInformações disponíveis ",
+                "aqui.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ConfirmedOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ReadyOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10))
+        );
     }
 
     @Transactional
@@ -173,6 +255,27 @@ public class OrderService {
 
         order.setOrderState(OrderStates.DELIVERED);
         orderRepository.save(order);
+
+        notificationService.sendToUser(
+                order.getUser().getEmail(),
+                "Encomenda #" + order.getId() + " foi levantada!\nAcompanhe ",
+                "aqui.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchMyOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.Accompany.getPath())
+        );
+
+        notificationService.sendToRole(
+                "ROLE_COUNTER_EMPLOYEE",
+                "Encomenda #" + order.getId() + " foi levantada!\nInformações disponíveis ",
+                "aqui.",
+                order.getBakery(),
+                List.of("/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.SearchAllOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10) + "&email=" + order.getUser().getEmail(),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ReadyOrders.getPath()
+                                + "?date=" + order.getDate().toString().substring(0, 10))
+        );
     }
 
     @Transactional
@@ -194,6 +297,9 @@ public class OrderService {
         if (order == null)
             throw new EntityNotFoundException("Carrinho não encontrado.");
 
+        if (!order.getOrderState().equals(OrderStates.INCART))
+            throw new IllegalStateException("Não é possível adicionar um Produto a esta Encomenda.");
+
         Product product = productRepository.findById(data.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
@@ -214,6 +320,9 @@ public class OrderService {
 
         if (order == null)
             throw new EntityNotFoundException("Carrinho não encontrado.");
+
+        if (!order.getOrderState().equals(OrderStates.INCART))
+            throw new IllegalStateException("Não é possível retirar um Produto a esta Encomenda.");
 
         Product product = productRepository.findById(data.productId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));

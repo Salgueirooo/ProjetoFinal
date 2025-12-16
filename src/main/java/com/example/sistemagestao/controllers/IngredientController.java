@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("api/ingredient")
@@ -30,9 +31,9 @@ public class IngredientController {
         return result;
     }
 
-    @GetMapping("/without-stock")
-    public List<IngredientResponseDTO> getAllIngredientsWithoutStock(){
-        return ingredientService.getAllWithoutStock();
+    @GetMapping("/without-stock/{bakeryId}")
+    public List<IngredientResponseDTO> getAllIngredientsWithStockLessThan(@PathVariable Long bakeryId, @RequestParam(required = false) Double minQuantity){
+        return ingredientService.getAllWithLessStockThan(bakeryId, Objects.requireNonNullElse(minQuantity, 0.0));
     }
 
     @GetMapping("/{id}")

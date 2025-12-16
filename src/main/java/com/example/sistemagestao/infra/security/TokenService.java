@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sistemagestao.domain.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -53,5 +54,19 @@ public class TokenService {
         return ZonedDateTime.now(ZoneId.of("Europe/Lisbon"))
                 .plusHours(2)
                 .toInstant();
+    }
+
+    public List<String> extractRoles(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            DecodedJWT jwt = JWT.require(algorithm)
+                    .withIssuer("auth-api")
+                    .build()
+                    .verify(token);
+
+            return jwt.getClaim("roles").asList(String.class);
+        } catch (JWTVerificationException e) {
+            return List.of();
+        }
     }
 }

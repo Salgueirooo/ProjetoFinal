@@ -28,6 +28,8 @@ public class ProductReviewService {
     private ProductService productService;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public void addReview(ProductReviewRequestDTO data, User user) {
@@ -51,6 +53,15 @@ public class ProductReviewService {
         productReviewRepository.save(productReview);
 
         productService.updateProductAverageRating(orderDetails.getProduct().getId());
+
+        notificationService.sendToRole(
+                "ROLE_ADMIN",
+                "Nova avaliação ao produto " + orderDetails.getProduct().getName() + "! Mais informações ",
+                "aqui.",
+                orderDetails.getOrder().getBakery(),
+                List.of("/home/" + orderDetails.getOrder().getBakery().getId() + "/" + NotificationService.FrontendPath.SearchProducts.getPath()
+                        + "?product-name=" + orderDetails.getProduct().getName())
+        );
     }
 
     @Transactional

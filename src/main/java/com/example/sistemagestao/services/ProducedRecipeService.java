@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -30,6 +32,8 @@ public class ProducedRecipeService {
     private StockService stockService;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public void add(ProducedRecipeRequestDTO data, User user) {
@@ -57,6 +61,15 @@ public class ProducedRecipeService {
         stockService.updateStockAfterUse(recipe.getId(), data.bakeryId(), data.dose());
 
         producedRecipeRepository.save(producedRecipe);
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                producedRecipe.getUser().getName() + " iniciou uma receita de " + producedRecipe.getRecipe().getProduct().getName() + "! Acompanhe na opção ",
+                "Receitas Iniciadas.",
+                producedRecipe.getBakery(),
+                List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
+                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageStock.getPath())
+        );
     }
 
     @Transactional
@@ -75,6 +88,16 @@ public class ProducedRecipeService {
         }
 
         producedRecipeRepository.delete(producedRecipe);
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                producedRecipe.getUser().getName() + " cancelou uma receita de " + producedRecipe.getRecipe().getProduct().getName() + ".",
+                "",
+                producedRecipe.getBakery(),
+                List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
+                        "/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.HistoryRecipes.getPath(),
+                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageStock.getPath())
+        );
     }
 
     @Transactional
@@ -88,6 +111,15 @@ public class ProducedRecipeService {
 
         producedRecipe.setFinalDate(LocalDateTime.now());
         producedRecipeRepository.save(producedRecipe);
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                "Uma receita de " + producedRecipe.getRecipe().getProduct().getName() + "foi terminada.",
+                "",
+                producedRecipe.getBakery(),
+                List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
+                        "/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.HistoryRecipes.getPath())
+        );
     }
 
     @Transactional
@@ -96,6 +128,19 @@ public class ProducedRecipeService {
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente da Receita ativa não encontrada."));
 
         pri.toggleDone();
+        producedRecipeIngredientRepository.save(pri);
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                pri.getDone() ? (
+                        "Foi adicionado/a " + pri.getIngredient().getName() + " à receita de " + pri.getProducedRecipe().getRecipe().getProduct().getName() + "! Acompanhe a "
+                    ) : (
+                        "Foi retirado/a " + pri.getIngredient().getName() + " à receita de " + pri.getProducedRecipe().getRecipe().getProduct().getName() + "! Acompanhe a "
+                    ),
+                "Receita.",
+                pri.getProducedRecipe().getBakery(),
+                List.of("/home/" + pri.getProducedRecipe().getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath() + "started-recipes?recipe=" + pri.getProducedRecipe().getId())
+        );
     }
 
     public ActivatedRecipeResponseDTO getActiveRecipeById(Long id) {
@@ -119,11 +164,14 @@ public class ProducedRecipeService {
                 .toList();
     }
 
-    public List<ProducedRecipeResponseDTO> getAllByBakery(Long bakeryId) {
+    public List<ProducedRecipeResponseDTO> getAllByBakeryAndDate(Long bakeryId, LocalDate date) {
         if(!bakeryRepository.existsById(bakeryId))
             throw new EntityNotFoundException("Pastelaria não encontrada.");
 
-        return producedRecipeRepository.findByBakeryIdOrderByInitialDateDesc(bakeryId)
+        LocalDateTime startDate = date.atStartOfDay();
+        LocalDateTime endDate = date.atTime(LocalTime.MAX);
+
+        return producedRecipeRepository.findByBakeryIdAndInitialDateBetweenOrderByInitialDateAsc(bakeryId, startDate, endDate)
                 .stream()
                 .map(ProducedRecipeResponseDTO::new)
                 .toList();

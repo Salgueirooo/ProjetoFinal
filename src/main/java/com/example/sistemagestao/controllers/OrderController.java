@@ -52,7 +52,7 @@ public class OrderController {
         orderService.removeProduct(data, user);
     }
 
-    @PutMapping("/upgrade-product")
+    @PutMapping("/update-product")
     public void upgradeProduct(@RequestBody OrderDetailsUpgradeRequestDTO data, @AuthenticationPrincipal User user) {
         orderService.upgradeQuantity(data, user);
     }

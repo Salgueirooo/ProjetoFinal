@@ -170,4 +170,11 @@ public class BakeryService {
                 .map(BakeryResponseDTO::new)
                 .toList();
     }
+
+    public String getBakeryName(Long id) {
+        Bakery bakery = bakeryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
+
+        return bakery.getName();
+    }
 }

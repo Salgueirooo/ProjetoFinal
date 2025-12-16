@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://192.168.1.66:5173", "http://192.168.1.66:5174"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "http://192.168.1.66:5173", "http://192.168.1.66:5174"));
 
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

@@ -60,6 +60,15 @@ public class StockController {
         stockService.updateStock(ingredient_id, bakery_id, quantity);
     }
 
+    @PutMapping("/add/{bakery_id}/{ingredient_id}")
+    public void addBakeryStock(
+            @PathVariable Long bakery_id,
+            @PathVariable Long ingredient_id,
+            @RequestBody Double quantity
+    ){
+        stockService.addStock(ingredient_id, bakery_id, quantity);
+    }
+
     @GetMapping("/recipe-stock-status/{bakery_id}/{recipe_id}")
     public List<IngredientStockCheckDTO> verifyStockForRecipe(
             @PathVariable Long bakery_id,

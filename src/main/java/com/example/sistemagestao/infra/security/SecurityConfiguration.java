@@ -35,7 +35,14 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(401, "Unauthorized");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("Token  inválido ou ausente.");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("Sem permissão para aceder a este recurso");
                         })
                 )
                 .authorizeHttpRequests(authorize -> authorize
@@ -43,7 +50,7 @@ public class SecurityConfiguration {
                                 "/api/auth/login",
                                 "/api/auth/register",
                                 "/api/auth/register-client",
-                                "/api/initialize",
+                                "/api/initialize/**",
                                 "/uploads/**")
                         .permitAll()
 
@@ -54,14 +61,16 @@ public class SecurityConfiguration {
                                 "/api/product/search-active",
                                 "/api/order/order-in-cart/*",
                                 "/api/order/all-by-user/*",
-                                "/api/statistics/orders-user/*"
+                                "/api/order/search-day-by-user/*",
+                                "/api/statistics/orders-user/*",
+                                "/api/user/get-username"
                         )
                         .hasRole("CLIENT")
 
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/order/make",
                                 "/api/order/cancel/*",
-                                "/api/order/upgrade-product"
+                                "/api/order/update-product"
                         )
                         .hasRole("CLIENT")
 
@@ -103,6 +112,8 @@ public class SecurityConfiguration {
                                 "/api/statistics/**"
                         )
                         .hasRole("ADMIN")
+
+                        .requestMatchers("/ws/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

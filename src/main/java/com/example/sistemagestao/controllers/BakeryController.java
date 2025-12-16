@@ -35,4 +35,9 @@ public class BakeryController {
     public void deleteBakeryById(@PathVariable Long id){
         bakeryService.delete(id);
     }
+
+    @GetMapping("/get-name/{id}")
+    public String getBakeryNameById(@PathVariable Long id){
+        return bakeryService.getBakeryName(id);
+    }
 }

@@ -33,6 +33,8 @@ public class StockService {
     private ProducedRecipeRepository producedRecipeRepository;
     @Autowired
     private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     public List<StockResponseDTO> getAll(){
         return stockRepository.findAllByOrderByIngredientNameAscBakeryNameAsc()
@@ -97,6 +99,37 @@ public class StockService {
         } else {
             throw new EntityNotFoundException("Stock não encontrado para este Ingrediente nesta Pastelaria.");
         }
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                "O stock do ingrediente " + stock.getIngredient().getName() + " foi atualizado!\nInformações disponíveis ",
+                "aqui.",
+                stock.getBakery(),
+                List.of("/home/" + stock.getBakery().getId() + "/" + NotificationService.FrontendPath.ManageStock.getPath())
+        );
+    }
+
+    @Transactional
+    public void addStock(Long ingredientId, Long bakeryId, Double quantity) {
+        Stock stock = stockRepository.findByIngredientIdAndBakeryId(ingredientId, bakeryId);
+
+        if (stock != null) {
+            if (quantity < 0) {
+                throw new IllegalArgumentException("A valor a acrescentar deve ser um número positivo.");
+            }
+            stock.setQuantity(stock.getQuantity() + quantity);
+            stockRepository.save(stock);
+        } else {
+            throw new EntityNotFoundException("Stock não encontrado para este Ingrediente nesta Pastelaria.");
+        }
+
+        notificationService.sendToRole(
+                "ROLE_CONFECTIONER",
+                "O stock do ingrediente " + stock.getIngredient().getName() + " foi atualizado!\nInformações disponíveis ",
+                "aqui.",
+                stock.getBakery(),
+                List.of("/home/" + stock.getBakery().getId() + "/" + NotificationService.FrontendPath.ManageStock.getPath())
+        );
     }
 
     public List<IngredientStockCheckDTO> verifyStockForRecipe(Long recipeId, Long bakeryId) {

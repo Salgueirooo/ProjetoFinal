@@ -3,19 +3,19 @@ package com.example.sistemagestao.domain;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public enum MeasurentUnits {
     KG("kg", "Quilogramas"),
     LITRE("L", "Litros"),
-    UNITS("unid.", "Unidades");
+    UNITS("un.", "Unidades");
 
-    private String symbol;
-    private String description;
+    private final String symbol;
+    private final String description;
 
     public static MeasurentUnits findByDescription(String description) {
         return Arrays.stream(values())

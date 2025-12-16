@@ -3,10 +3,10 @@ package com.example.sistemagestao.domain;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
+@RequiredArgsConstructor
 public enum OrderStates {
 
     INCART("No carrinho"),
@@ -17,5 +17,5 @@ public enum OrderStates {
     READY("Pronta"),
     DELIVERED("Entregue");
 
-    private String state;
+    private final String state;
 }

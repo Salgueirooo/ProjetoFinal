@@ -32,6 +32,8 @@ public class IngredientService {
     private RecipeService recipeService;
     @Autowired
     private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
+    @Autowired
+    private BakeryRepository bakeryRepository;
 
     public List<IngredientResponseDTO> getAll() {
         return ingredientRepository.findAllByOrderByNameAsc()
@@ -50,8 +52,11 @@ public class IngredientService {
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado.")));
     }
 
-    public List<IngredientResponseDTO> getAllWithoutStock() {
-        return ingredientRepository.findAllWithNoStockInAnyBakery()
+    public List<IngredientResponseDTO> getAllWithLessStockThan(Long bakeryId, Double minQuantity) {
+        Bakery bakery = bakeryRepository.findById(bakeryId)
+                .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
+
+        return ingredientRepository.findAllWithNoStockInBakery(minQuantity, bakery)
                 .stream().map(IngredientResponseDTO::new)
                 .toList();
     }
