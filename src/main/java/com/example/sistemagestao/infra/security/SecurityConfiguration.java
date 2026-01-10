@@ -77,7 +77,7 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/api/order/add-product",
                                 "/api/order/remove-product",
-                                "/api/product-review/**"
+                                "/api/product-review/add"
                                 )
                         .hasRole("CLIENT")
 
@@ -91,7 +91,8 @@ public class SecurityConfiguration {
 
                         .requestMatchers(HttpMethod.GET,
                                 "/api/recipe/**",
-                                "/api/stock/**"
+                                "/api/stock/**",
+                                "/api/product-stock/**"
                         )
                         .hasRole("CONFECTIONER")
 
@@ -107,9 +108,12 @@ public class SecurityConfiguration {
                                 "/api/product/**",
                                 "/api/recipe/**",
                                 "/api/stock/**",
+                                "/api/product-stock/**",
                                 "/api/user/**",
                                 "/api/order/**",
-                                "/api/statistics/**"
+                                "/api/statistics/**",
+                                "/api/system-config/**"
+
                         )
                         .hasRole("ADMIN")
 

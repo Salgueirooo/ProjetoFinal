@@ -1,10 +1,7 @@
 package com.example.sistemagestao.services;
 
 import com.example.sistemagestao.domain.*;
-import com.example.sistemagestao.dto.RecipeIngredientRequestDTO;
-import com.example.sistemagestao.dto.RecipeIngredientResponseDTO;
-import com.example.sistemagestao.dto.RecipeRequestDTO;
-import com.example.sistemagestao.dto.RecipeResponseDTO;
+import com.example.sistemagestao.dto.*;
 import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -13,7 +10,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +24,6 @@ public class RecipeService {
 
     @Autowired
     private ProductRepository productRepository;
-
     @Autowired
     private RecipeRepository recipeRepository;
     @Autowired
@@ -29,11 +31,9 @@ public class RecipeService {
     @Autowired
     private IngredientRepository ingredientRepository;
     @Autowired
-    private ProducedRecipeIngredientRepository producedRecipeIngredientRepository;
+    private OrderDetailsRepository  orderDetailsRepository;
     @Autowired
     private ProducedRecipeRepository producedRecipeRepository;
-    @Autowired
-    private ProducedRecipeService producedRecipeService;
 
     @Transactional
     public void add(RecipeRequestDTO data) {
@@ -44,7 +44,10 @@ public class RecipeService {
             throw new EntityExistsException("Já existe uma Receita para este Produto.");
         }
 
-        Recipe recipe = new Recipe(product, data.preparation());
+        if (data.nResultingProducts() <= 0)
+            throw new IllegalArgumentException("O número de produtos resultantes deve ser maior que 0.");
+
+        Recipe recipe = new Recipe(product, data.preparation(), data.nResultingProducts());
         recipeRepository.save(recipe);
     }
 
@@ -152,5 +155,92 @@ public class RecipeService {
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente da receita não encontrado."));
 
         recipeIngredientsRepository.delete(recipeIngredient);
+    }
+
+    public List<RecipeProductionTaskDTO> getProductionTasks(
+            Long bakeryId,
+            LocalDate date
+    ) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.atTime(LocalTime.MAX);
+
+        List<STProductQuantityDTO> products =
+                orderDetailsRepository.getProductOrderedBetweenDates(
+                        bakeryId, start, end
+                );
+
+        if (products.isEmpty())
+            return List.of();
+
+        Map<Long, Long> productQuantities = products.stream()
+                .collect(Collectors.toMap(
+                        STProductQuantityDTO::productId,
+                        STProductQuantityDTO::totalQuantity
+                ));
+
+        List<Long> productIds = products.stream()
+                .map(STProductQuantityDTO::productId)
+                .toList();
+
+        /*List<STRecipeIngredientDTO> recipeIngredients = recipeRepository.getIngredientsForProducts(productIds);
+
+        Map<Long, Double> recipeDoses = new HashMap<>();
+        Map<Long, Long> recipeTotalProducts = new HashMap<>();
+
+        for (STRecipeIngredientDTO ri : recipeIngredients) {
+            Long orderedQty = productQuantities.get(ri.productId());
+            if (orderedQty == null || orderedQty == 0)
+                continue;
+
+            double doses = (double) orderedQty / ri.recipeYield();
+
+            recipeDoses.merge(ri.recipeId(), doses, Double::sum);
+            recipeTotalProducts.merge(ri.recipeId(), orderedQty, Long::sum);
+        }*/
+
+        List<Recipe> recipesByProductId =
+                recipeRepository.findByProduct_IdIn(productIds);
+
+        Map<Long, Double> recipeDoses = new HashMap<>();
+        Map<Long, Long> recipeTotalProducts = new HashMap<>();
+
+        for (Recipe r : recipesByProductId) {
+
+            Long orderedQty = productQuantities.get(r.getProduct().getId());
+            if (orderedQty == null || orderedQty == 0)
+                continue;
+
+            double doses = (double) orderedQty / r.getNResultingProducts();
+
+            recipeDoses.merge(r.getId(), doses, Double::sum);
+            recipeTotalProducts.merge(r.getId(), orderedQty, Long::sum);
+        }
+
+        if (recipeDoses.isEmpty())
+            return List.of();
+
+        List<ProducedRecipe> producedRecipes =
+                producedRecipeRepository.findByBakeryIdAndInitialDateBetween(
+                        bakeryId, start, end
+                );
+
+        Map<Long, Double> producedDosesByRecipe = producedRecipes.stream()
+                .collect(Collectors.groupingBy(
+                        pr -> pr.getRecipe().getId(),
+                        Collectors.summingDouble(ProducedRecipe::getDose)
+                ));
+
+        List<Recipe> recipes =
+                recipeRepository.findByIdInOrderByProduct_NameAsc(recipeDoses.keySet());
+
+        return recipes.stream()
+                .map(r -> new RecipeProductionTaskDTO(
+                        r.getId(),
+                        r.getProduct().getName(),
+                        recipeDoses.get(r.getId()),
+                        recipeTotalProducts.getOrDefault(r.getId(), 0L),
+                        producedDosesByRecipe.getOrDefault(r.getId(), 0.0)
+                ))
+                .toList();
     }
 }

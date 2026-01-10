@@ -23,8 +23,8 @@ public class ProductReviewController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public void deleteProductReview(@PathVariable Long id, @AuthenticationPrincipal User user) {
-        productReviewService.deleteReview(id, user);
+    public void deleteProductReview(@PathVariable Long id) {
+        productReviewService.deleteReview(id);
     }
 
     @GetMapping("/get/{productId}")

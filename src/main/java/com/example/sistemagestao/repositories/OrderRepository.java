@@ -31,6 +31,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     //todas as da pastelaria por nome do utilizador, sem as do carrinho por data
     List<Order> findAllByBakery_IdAndUser_EmailAndOrderStateNotAndDateBetweenOrderByDateAsc(Long bakeryId, String email, OrderStates excludedState, LocalDateTime initialDate, LocalDateTime endDate);
 
+    //todas as da pastelaria por nome do utilizador, sem as do carrinho
+    List<Order> findAllByBakery_IdAndUser_EmailAndOrderStateNotOrderByDateDesc(Long bakeryId, String email, OrderStates excludedState);
+
     //todas as da pastelaria por estado da encomenda, data e nome do utilizador
     List<Order> findAllByBakery_IdAndUserNameContainsIgnoreCaseAndOrderStateAndDateBetweenOrderByDateAsc(Long bakeryId, String userName, OrderStates orderStates, LocalDateTime initialDate, LocalDateTime endDate);
 

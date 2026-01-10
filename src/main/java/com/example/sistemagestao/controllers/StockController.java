@@ -6,6 +6,8 @@ import com.example.sistemagestao.services.StockService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -72,8 +74,14 @@ public class StockController {
     @GetMapping("/recipe-stock-status/{bakery_id}/{recipe_id}")
     public List<IngredientStockCheckDTO> verifyStockForRecipe(
             @PathVariable Long bakery_id,
-            @PathVariable Long recipe_id
+            @PathVariable Long recipe_id,
+            @RequestParam Double dose
     ){
-        return stockService.verifyStockForRecipe(recipe_id, bakery_id);
+        return stockService.verifyStockForRecipe(recipe_id, bakery_id, dose);
+    }
+
+    @GetMapping("/orders-stock-status/{id}")
+    public  List<IngredientStockCheckDTO> verifyStockForOrders(@PathVariable Long id, @RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
+        return stockService.checkStock(id, startDate, endDate);
     }
 }

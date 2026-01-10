@@ -26,7 +26,7 @@ public class InitializeController {
     @GetMapping("/notify")
     public String sendNotification(@RequestParam String message) {
         messagingTemplate.convertAndSendToUser(
-                "rodrigo@gmail.com", // ID do user (ou username)
+                "ro@gmail.com",
                 "/queue/notifications",
                 new WSMessageDTO(message, null, null, null)
         );

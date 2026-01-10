@@ -36,6 +36,10 @@ public class OrderService {
     private ProductReviewService productReviewService;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private SystemConfigService systemConfigService;
+    @Autowired
+    private ProductStockService productStockService;
 
     @Transactional
     public void initialize(Long bakeryId, User user) {
@@ -95,8 +99,9 @@ public class OrderService {
             throw new IllegalArgumentException("A encomenda não tem produtos.");
 
         long hoursBetween = ChronoUnit.HOURS.between(now, orderDate);
-        if (hoursBetween < 24) {
-            throw new IllegalStateException("A data da encomenda deve ter pelo menos 24 horas de antecedência.");
+        int minOrderHours = systemConfigService.getInt("MIN_ORDER_HOURS", 24);
+        if (hoursBetween < minOrderHours) {
+            throw new IllegalStateException("A data da encomenda deve ter pelo menos " + minOrderHours + " horas de antecedência.");
         }
 
         updateUnitaryPrices(order.getId());
@@ -134,8 +139,9 @@ public class OrderService {
 
         if (order.getOrderState().equals(OrderStates.ACCEPTED)){
             long hoursBetween = ChronoUnit.HOURS.between(LocalDateTime.now(), order.getDate());
-            if (hoursBetween < 48) {
-                throw new IllegalStateException("Só é possível cancelar uma Encomenda com 48h de antecedência.");
+            int maxOrderCancelHours = systemConfigService.getInt("MAX_ORDER_CANCEL_HOURS", 48);
+            if (hoursBetween < maxOrderCancelHours) {
+                throw new IllegalStateException("Apenas é possível cancelar uma Encomenda com " + maxOrderCancelHours + " horas de antecedência.");
             }
         }
 
@@ -193,7 +199,7 @@ public class OrderService {
 
         notificationService.sendToRole(
                 "ROLE_COUNTER_EMPLOYEE",
-                data.acceptance() ? "Encomenda #" + order.getId() + " foi aceite!\nInformações disponíveis " : "Encomenda #" + order.getId() + "foi recusada! Informações disponíveis ",
+                data.acceptance() ? "Encomenda #" + order.getId() + " foi aceite!\nInformações disponíveis " : "Encomenda #" + order.getId() + " foi recusada! Informações disponíveis ",
                 "aqui.",
                 order.getBakery(),
                 data.acceptance() ? (
@@ -218,6 +224,12 @@ public class OrderService {
         if (!order.getOrderState().equals(OrderStates.ACCEPTED))
             throw new IllegalStateException("Não é possível definir esta Encomenda como pronta.");
 
+        if(!productStockService.isStockSufficientForOrder(id)) {
+            throw new IllegalStateException("O stock de produtos não é suficiente para responder à encomenda.");
+        }
+
+        productStockService.updateStockAfterUse(id);
+
         order.setOrderState(OrderStates.READY);
         orderRepository.save(order);
 
@@ -241,7 +253,8 @@ public class OrderService {
                         "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ConfirmedOrders.getPath()
                                 + "?date=" + order.getDate().toString().substring(0, 10),
                         "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ReadyOrders.getPath()
-                                + "?date=" + order.getDate().toString().substring(0, 10))
+                                + "?date=" + order.getDate().toString().substring(0, 10),
+                        "/home/" + order.getBakery().getId() + "/" + NotificationService.FrontendPath.ManageProductStock.getPath())
         );
     }
 
@@ -377,9 +390,7 @@ public class OrderService {
                 .sorted(Comparator.comparing(od -> od.getProduct().getName().toLowerCase()))
                 .map(od -> {
 
-                    boolean wasReviewed = productReviewService.wasReviewed(
-                            od.getId()
-                    );
+                    boolean wasReviewed = productReviewService.wasReviewed(od.getId());
 
                     return new OrderDetailsWReviewResponseDTO(
                             od,
@@ -441,6 +452,19 @@ public class OrderService {
 
         return orderRepository.findAllByBakery_IdAndUser_EmailAndOrderStateNotAndDateBetweenOrderByDateAsc(
                         bakeryId, email, OrderStates.INCART, startOfDay, endOfDay
+                )
+                .stream()
+                .map(OrderResponseDTO::new)
+                .toList();
+    }
+
+    public List<OrderResponseDTO> getAllOrdersByEmail(Long bakeryId, String email) {
+        if(!bakeryRepository.existsById(bakeryId))
+            throw new EntityNotFoundException("Pastelaria não encontrada.");
+
+
+        return orderRepository.findAllByBakery_IdAndUser_EmailAndOrderStateNotOrderByDateDesc(
+                        bakeryId, email, OrderStates.INCART
                 )
                 .stream()
                 .map(OrderResponseDTO::new)

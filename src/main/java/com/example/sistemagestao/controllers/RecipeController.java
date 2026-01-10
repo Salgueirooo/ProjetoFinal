@@ -1,9 +1,6 @@
 package com.example.sistemagestao.controllers;
 
-import com.example.sistemagestao.dto.RecipeIngredientRequestDTO;
-import com.example.sistemagestao.dto.RecipeIngredientResponseDTO;
-import com.example.sistemagestao.dto.RecipeRequestDTO;
-import com.example.sistemagestao.dto.RecipeResponseDTO;
+import com.example.sistemagestao.dto.*;
 import com.example.sistemagestao.services.RecipeService;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -95,5 +93,9 @@ public class RecipeController {
         recipeService.deleteIngredient(id);
     }
 
+    @GetMapping("/get-production-tasks/{bakeryId}")
+    public List<RecipeProductionTaskDTO> getRecipeProductionTasks(@PathVariable Long bakeryId, @RequestParam LocalDate date){
+        return recipeService.getProductionTasks(bakeryId, date);
+    }
 
 }

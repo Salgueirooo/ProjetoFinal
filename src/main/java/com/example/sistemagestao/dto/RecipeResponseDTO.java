@@ -10,6 +10,7 @@ public record RecipeResponseDTO(
         String productName,
         String image,
         String preparation,
+        int nResultingProducts,
         List<RecipeIngredientResponseDTO> ingredients
 ) {
     public RecipeResponseDTO (Recipe recipe) {
@@ -19,6 +20,7 @@ public record RecipeResponseDTO(
             recipe.getProduct().getName(),
             recipe.getProduct().getImage(),
             recipe.getPreparation(),
+            recipe.getNResultingProducts(),
             recipe.getIngredientsList().stream()
                 .map(RecipeIngredientResponseDTO::new)
                 .toList()

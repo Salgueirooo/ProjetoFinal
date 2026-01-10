@@ -1,7 +1,8 @@
 package com.example.sistemagestao.dto;
 
 public record IngredientStockCheckDTO(
-        RecipeIngredientResponseDTO ingredient,
+        IngredientResponseDTO ingredient,
+        Double quantityNeeded,
         Double availableQuantity,
         boolean sufficient
 ) {}

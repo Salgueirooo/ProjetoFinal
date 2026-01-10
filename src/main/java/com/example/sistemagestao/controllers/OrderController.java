@@ -73,8 +73,13 @@ public class OrderController {
     }
 
     @GetMapping("/search-email-day/{bakery_id}")
-    public List<OrderResponseDTO> getAllByEmailAndDay(@PathVariable Long bakery_id, @RequestParam String email, @RequestParam LocalDate date) {
-        return orderService.getAllOrdersByDayAndEmail(bakery_id, email, date);
+    public List<OrderResponseDTO> getAllByEmailAndDay(@PathVariable Long bakery_id, @RequestParam String email, @RequestParam(required = false) LocalDate date) {
+        if(date == null) {
+            return orderService.getAllOrdersByEmail(bakery_id, email);
+
+        } else {
+            return orderService.getAllOrdersByDayAndEmail(bakery_id, email, date);
+        }
     }
 
     @GetMapping("/get-accepted-by-date/{bakery_id}")

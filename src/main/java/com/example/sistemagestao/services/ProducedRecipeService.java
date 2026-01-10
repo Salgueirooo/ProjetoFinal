@@ -34,6 +34,8 @@ public class ProducedRecipeService {
     private ProductRepository productRepository;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private ProductStockService productStockService;
 
     @Transactional
     public void add(ProducedRecipeRequestDTO data, User user) {
@@ -47,7 +49,7 @@ public class ProducedRecipeService {
         if (data.dose() <= 0)
             throw new IllegalStateException("O valor da Dose deve ser maior que 0.");
 
-        if(!stockService.isStockSufficientForRecipe(recipe.getId(), bakery.getId())) {
+        if(!stockService.isStockSufficientForRecipe(recipe.getId(), bakery.getId(), data.dose())) {
             throw new IllegalStateException("A Pastelaria não tem stock suficiente para produzir esta Receita.");
         }
 
@@ -68,7 +70,7 @@ public class ProducedRecipeService {
                 "Receitas Iniciadas.",
                 producedRecipe.getBakery(),
                 List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
-                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageStock.getPath())
+                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageIngredientStock.getPath())
         );
     }
 
@@ -96,12 +98,12 @@ public class ProducedRecipeService {
                 producedRecipe.getBakery(),
                 List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
                         "/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.HistoryRecipes.getPath(),
-                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageStock.getPath())
+                        "/home/" + producedRecipe.getBakery().getId() + "/" +NotificationService.FrontendPath.ManageIngredientStock.getPath())
         );
     }
 
     @Transactional
-    public void completeProduction(Long id) {
+    public void completeProduction(Long id, int quantityDone) {
         ProducedRecipe producedRecipe = producedRecipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita efetuada não encontrada."));
 
@@ -112,9 +114,11 @@ public class ProducedRecipeService {
         producedRecipe.setFinalDate(LocalDateTime.now());
         producedRecipeRepository.save(producedRecipe);
 
+        productStockService.addStock(producedRecipe.getRecipe().getProduct().getId(), producedRecipe.getBakery().getId(), quantityDone);
+
         notificationService.sendToRole(
                 "ROLE_CONFECTIONER",
-                "Uma receita de " + producedRecipe.getRecipe().getProduct().getName() + "foi terminada.",
+                "Uma receita de " + producedRecipe.getRecipe().getProduct().getName() + " foi terminada.",
                 "",
                 producedRecipe.getBakery(),
                 List.of("/home/" + producedRecipe.getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath(),
@@ -139,7 +143,7 @@ public class ProducedRecipeService {
                     ),
                 "Receita.",
                 pri.getProducedRecipe().getBakery(),
-                List.of("/home/" + pri.getProducedRecipe().getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath() + "started-recipes?recipe=" + pri.getProducedRecipe().getId())
+                List.of("/home/" + pri.getProducedRecipe().getBakery().getId() + "/" + NotificationService.FrontendPath.StartedRecipes.getPath() + "?recipe=" + pri.getProducedRecipe().getId())
         );
     }
 

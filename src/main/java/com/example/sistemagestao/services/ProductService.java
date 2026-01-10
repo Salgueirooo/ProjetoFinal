@@ -33,6 +33,8 @@ public class ProductService {
     private OrderDetailsRepository orderDetailsRepository;
     @Autowired
     private ProductReviewRepository productReviewRepository;
+    @Autowired
+    private ProductStockService productStockService;
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -49,6 +51,8 @@ public class ProductService {
 
         Product productData = new Product(data, category);
         productRepository.save(productData);
+
+        productStockService.initialize(productData.getId());
     }
 
     public ProductDetailsResponseDTO getDetailsById(Long id){

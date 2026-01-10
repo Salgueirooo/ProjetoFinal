@@ -52,11 +52,11 @@ public class IngredientService {
                 .orElseThrow(() -> new EntityNotFoundException("Ingrediente não encontrado.")));
     }
 
-    public List<IngredientResponseDTO> getAllWithLessStockThan(Long bakeryId, Double minQuantity) {
+    public List<IngredientResponseDTO> getAllWithLessStockThan(Long bakeryId, Double maxQuantity) {
         Bakery bakery = bakeryRepository.findById(bakeryId)
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
 
-        return ingredientRepository.findAllWithNoStockInBakery(minQuantity, bakery)
+        return ingredientRepository.findAllWithNoStockInBakery(maxQuantity, bakery)
                 .stream().map(IngredientResponseDTO::new)
                 .toList();
     }

@@ -42,6 +42,10 @@ public class BakeryService {
     private OrderService orderService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private ProductStockRepository productStockRepository;
 
     @Transactional
     public void add(BakeryRequestDTO data) {
@@ -75,6 +79,14 @@ public class BakeryService {
                 .toList();
 
         stockRepository.saveAll(stocks);
+
+        List<Product> products = productRepository.findAll();
+        List<ProductStock> productStocks = products
+                .stream()
+                .map(product -> new ProductStock(product, bakery, 0))
+                .toList();
+
+        productStockRepository.saveAll(productStocks);
 
         List<User> userList = userRepository.findAll();
         for (User user : userList) {

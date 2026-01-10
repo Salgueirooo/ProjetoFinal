@@ -4,6 +4,7 @@ import com.example.sistemagestao.domain.Stock;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Set;
 
 public interface StockRepository extends JpaRepository<Stock, Long> {
     Stock findByIngredientIdAndBakeryId(Long ingredientId, Long bakeryId);
@@ -16,4 +17,5 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     void deleteByBakeryId(Long bakeryId);
     boolean existsByIngredientIdAndQuantityGreaterThan(Long ingredientId, Double quantity);
     boolean existsByBakeryIdAndQuantityGreaterThan(Long bakeryId, Double quantity);
+    List<Stock> findByBakeryIdAndIngredientIdIn(Long bakeryId, Set<Long> ingredientIds);
 }

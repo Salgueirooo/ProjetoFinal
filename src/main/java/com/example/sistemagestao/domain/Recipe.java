@@ -24,11 +24,15 @@ public class Recipe {
 
     private String preparation;
 
+    @Column(nullable = false)
+    private int nResultingProducts;
+
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RecipeIngredient> ingredientsList = new ArrayList<>();
 
-    public Recipe(Product product, String preparation) {
+    public Recipe(Product product, String preparation,  int nResultingProducts) {
         this.product = product;
         this.preparation = preparation;
+        this.nResultingProducts = nResultingProducts;
     }
 }

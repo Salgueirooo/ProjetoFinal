@@ -32,8 +32,8 @@ public class IngredientController {
     }
 
     @GetMapping("/without-stock/{bakeryId}")
-    public List<IngredientResponseDTO> getAllIngredientsWithStockLessThan(@PathVariable Long bakeryId, @RequestParam(required = false) Double minQuantity){
-        return ingredientService.getAllWithLessStockThan(bakeryId, Objects.requireNonNullElse(minQuantity, 0.0));
+    public List<IngredientResponseDTO> getAllIngredientsWithStockLessThan(@PathVariable Long bakeryId, @RequestParam(required = false) Double maxQuantity){
+        return ingredientService.getAllWithLessStockThan(bakeryId, Objects.requireNonNullElse(maxQuantity, 0.0));
     }
 
     @GetMapping("/{id}")

@@ -1,10 +1,7 @@
 package com.example.sistemagestao.repositories;
 
 import com.example.sistemagestao.domain.OrderDetails;
-import com.example.sistemagestao.dto.STClientSalesDTO;
-import com.example.sistemagestao.dto.STClientSpendingDTO;
-import com.example.sistemagestao.dto.STProductCostDTO;
-import com.example.sistemagestao.dto.STProductSalesDTO;
+import com.example.sistemagestao.dto.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +18,29 @@ public interface OrderDetailsRepository extends JpaRepository<OrderDetails, Long
     boolean existsByProductId(Long productId);
     int countAllByOrderId(Long orderId);
 
+    @Query("""
+        SELECT new com.example.sistemagestao.dto.STProductQuantityDTO(
+            od.product.id,
+            od.product.name,
+            SUM(od.quantity)
+        )
+        FROM OrderDetails od
+        WHERE od.order.date BETWEEN :startDate AND :endDate
+            AND od.order.orderState = 'ACCEPTED'
+            AND od.order.bakery.id = :bakeryId
+        GROUP BY od.product.name
+        ORDER BY od.product.name ASC
+    """)
+    List<STProductQuantityDTO> getProductOrderedBetweenDates(
+            @Param("bakeryId") Long bakeryId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+
+
+
+    //Estatisticas:
 
     @Query("""
         SELECT new com.example.sistemagestao.dto.STProductSalesDTO(

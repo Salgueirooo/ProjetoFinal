@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -30,6 +32,8 @@ public class ProductReviewService {
     private ProductRepository productRepository;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private SystemConfigService systemConfigService;
 
     @Transactional
     public void addReview(ProductReviewRequestDTO data, User user) {
@@ -48,6 +52,15 @@ public class ProductReviewService {
         if(!orderDetails.getOrder().getOrderState().equals(OrderStates.DELIVERED))
             throw new IllegalStateException("Não é possível fazer uma Avaliação sobre esta encomenda.");
 
+        long daysBetween = ChronoUnit.DAYS.between(orderDetails.getOrder().getDate(), LocalDateTime.now());
+
+        int maxReviewDays = systemConfigService.getInt("MAX_REVIEW_DAYS", 7);
+        if (daysBetween > maxReviewDays) {
+            throw new IllegalStateException(
+                    "O prazo para avaliação do produto expirou."
+            );
+        }
+
         ProductReview productReview = new ProductReview(orderDetails, data.rating(), data.review());
 
         productReviewRepository.save(productReview);
@@ -65,14 +78,11 @@ public class ProductReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long reviewId, User user) {
+    public void deleteReview(Long reviewId) {
         ProductReview productReview = productReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Avaliação não encontrada."));
 
         Product product = productReview.getOrderDetails().getProduct();
-
-        if(!user.equals(productReview.getOrderDetails().getOrder().getUser()))
-            throw new AuthorizationDeniedException("Acesso negado.");
 
         productReviewRepository.delete(productReview);
 

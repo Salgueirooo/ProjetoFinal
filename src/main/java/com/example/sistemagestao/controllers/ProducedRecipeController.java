@@ -25,8 +25,8 @@ public class ProducedRecipeController {
     }
 
     @PutMapping("/complete-production/{id}")
-    public void completeProduction(@PathVariable Long id) {
-        producedRecipeService.completeProduction(id);
+    public void completeProduction(@PathVariable Long id, @RequestBody int quantityDone) {
+        producedRecipeService.completeProduction(id, quantityDone);
     }
 
     @DeleteMapping("/cancel-production/{id}")
