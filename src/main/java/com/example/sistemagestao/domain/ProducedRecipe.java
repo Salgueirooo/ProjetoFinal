@@ -24,7 +24,7 @@ public class ProducedRecipe {
     @JoinColumn(name = "recipe_id", nullable = false)
     private Recipe recipe;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String preparation;
 
     @ManyToOne

@@ -25,14 +25,13 @@ public class Category {
 
     private String image;
 
-    public Category (CategoryRequestDTO data) {
+    public Category (CategoryRequestDTO data, String image) {
         this.name = data.name();
-        this.image = data.image();
+        this.image = image;
     }
 
-    public void updateCategory(CategoryRequestDTO data) {
-        if (data.name() != null) this.name = data.name();
-        if (data.image() != null) this.image = data.image();
+    public void updateCategory(String image) {
+        if (image != null) this.image = image;
     }
 
 }

@@ -12,8 +12,15 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +38,43 @@ public class CategoryService {
             throw new EntityExistsException("Já existe uma Categoria com esse nome.");
         }
 
-        Category category = new Category(data);
+        String imagePath = "/uploads/no-photo.jpg";
+        MultipartFile image = data.image();
+
+        if (image != null && !image.isEmpty()) {
+
+            if (image.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
+            }
+
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
+
+            String uploadDir = "uploads/categories/";
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                Files.copy(
+                        image.getInputStream(),
+                        uploadPath.resolve(fileName),
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao guardar imagem.", e);
+            }
+
+            imagePath = "/uploads/categories/" + fileName;
+        }
+
+        Category category = new Category(data, imagePath);
         categoryRepository.save(category);
     }
 
@@ -51,11 +94,45 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
 
-        if (categoryRepository.existsByName(newData.name())) {
-            throw new EntityExistsException("Já existe uma Categoria com esse nome.");
+        String imagePath = category.getImage();
+
+        MultipartFile newImage = newData.image();
+        if (newImage != null && !newImage.isEmpty()) {
+
+            if (newImage.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
+            }
+
+            String contentType = newImage.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
+
+            String uploadDir = "uploads/categories/";
+            String fileName = UUID.randomUUID() + "_" + newImage.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                if (imagePath != null && !imagePath.isBlank() && !imagePath.equals("/uploads/no-photo.jpg")) {
+                    Path oldFile = Paths.get("." + imagePath);
+                    if (Files.exists(oldFile)) {
+                        Files.delete(oldFile);
+                    }
+                }
+
+                Files.copy(newImage.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                imagePath = "/uploads/categories/" + fileName;
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+            }
         }
 
-        category.updateCategory(newData);
+        category.updateCategory(imagePath);
         categoryRepository.save(category);
     }
 
@@ -63,6 +140,18 @@ public class CategoryService {
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
+
+        String imagePath = category.getImage();
+        if (imagePath != null && !imagePath.isBlank() && !imagePath.equals("/uploads/no-photo.jpg")) {
+            try {
+                Path filePath = Paths.get("." + imagePath);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao eliminar a imagem.", e);
+            }
+        }
 
         List<Product> products = productRepository.findByCategoryId(id);
         for (Product product : products) {

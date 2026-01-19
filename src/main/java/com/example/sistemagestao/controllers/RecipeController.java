@@ -25,8 +25,8 @@ public class RecipeController {
     }
 
     @PutMapping("/update/{id}")
-    public void updateRecipe(@PathVariable Long id, @RequestBody String preparation){
-        recipeService.update(id, preparation);
+    public void updateRecipe(@PathVariable Long id, @RequestBody RecipeRequestDTO newData){
+        recipeService.update(id, newData);
     }
 
     @DeleteMapping("/delete/{id}")

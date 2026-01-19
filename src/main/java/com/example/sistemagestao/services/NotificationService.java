@@ -66,7 +66,6 @@ public class NotificationService {
         VerifyStock("verify-stock"),
         SalesStats("sales-stats"),
         RevenueStats("revenue-stats"),
-        YearStats("year-stats"),
         UserStats("user-stats");
 
 

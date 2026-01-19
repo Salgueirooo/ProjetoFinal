@@ -28,9 +28,4 @@ public class Ingredient{
         this.name = data.name();
         this.units = units;
     }
-
-    public void updateIngredient(IngredientRequestDTO data, MeasurentUnits units) {
-        if (data.name() != null) this.name = data.name();
-        if (units != null) this.units = units;
-    }
 }

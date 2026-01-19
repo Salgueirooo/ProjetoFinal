@@ -27,6 +27,7 @@ public class ProductReview {
     @Column(nullable = false)
     private Integer rating;
 
+    @Column(columnDefinition = "TEXT")
     private String review;
 
     public ProductReview(OrderDetails orderDetails, Integer rating, String review) {

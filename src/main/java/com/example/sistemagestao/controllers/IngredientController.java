@@ -46,11 +46,6 @@ public class IngredientController {
         ingredientService.add(data);
     }
 
-    @PutMapping("/update/{id}")
-    public void updateIngredient(@PathVariable Long id, @RequestBody IngredientRequestDTO newData){
-        ingredientService.update(id, newData);
-    }
-
     @DeleteMapping("/delete/{id}")
     public void deleteIngredientById(@PathVariable Long id){
         ingredientService.deleteById(id);

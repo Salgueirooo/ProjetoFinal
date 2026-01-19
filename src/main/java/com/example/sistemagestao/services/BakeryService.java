@@ -53,21 +53,37 @@ public class BakeryService {
             throw new EntityExistsException("Já existe uma Pastelaria com esse nome.");
         }
 
-        String uploadDir = "uploads/bakeries/";
-        String fileName = UUID.randomUUID() + "_" + data.logo().getOriginalFilename();
-        Path uploadPath = Paths.get(uploadDir);
+        String logoPath = "/uploads/no-photo.jpg";
+        MultipartFile logo = data.logo();
 
-        try {
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+        if (logo != null && !logo.isEmpty()) {
+
+            if (logo.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
             }
 
-            Files.copy(data.logo().getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new RuntimeException("Erro ao guardar imagem do logotipo", e);
-        }
+            String contentType = logo.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
 
-        String logoPath = "/uploads/bakeries/" + fileName;
+            String uploadDir = "uploads/bakeries/";
+            String fileName = UUID.randomUUID() + "_" + logo.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                Files.copy(logo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao guardar imagem do logotipo.", e);
+            }
+
+            logoPath = "/uploads/bakeries/" + fileName;
+        }
 
         Bakery bakery = new Bakery(data, logoPath);
         bakeryRepository.save(bakery);
@@ -99,14 +115,20 @@ public class BakeryService {
         Bakery bakery = bakeryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
 
-        if (bakeryRepository.existsByName(newData.name())) {
-            throw new EntityExistsException("Já existe uma Pastelaria com esse nome.");
-        }
-
         String logoPath = bakery.getLogo();
 
         MultipartFile newLogo = newData.logo();
         if (newLogo != null && !newLogo.isEmpty()) {
+
+            if (newLogo.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
+            }
+
+            String contentType = newLogo.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
+
             String uploadDir = "uploads/bakeries/";
             String fileName = UUID.randomUUID() + "_" + newLogo.getOriginalFilename();
             Path uploadPath = Paths.get(uploadDir);
@@ -116,7 +138,7 @@ public class BakeryService {
                     Files.createDirectories(uploadPath);
                 }
 
-                if (logoPath != null && !logoPath.isBlank()) {
+                if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
                     Path oldFile = Paths.get("." + logoPath);
                     if (Files.exists(oldFile)) {
                         Files.delete(oldFile);
@@ -141,10 +163,13 @@ public class BakeryService {
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
 
         if(stockRepository.existsByBakeryIdAndQuantityGreaterThan(id, 0.0))
-            throw new IllegalStateException("Existe stock de ingredientes nesta pastelaria.");
+            throw new IllegalStateException("Não é possível eliminar esta pastelaria: Ainda existe stock de ingredientes nesta pastelaria!");
+
+        if(productStockRepository.existsByBakeryIdAndQuantityGreaterThan(id, 0))
+            throw new IllegalStateException("Não é possível eliminar esta pastelaria: Ainda existe stock de produtos nesta pastelaria!");
 
         String logoPath = bakery.getLogo();
-        if (logoPath != null && !logoPath.isBlank()) {
+        if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
             try {
                 Path filePath = Paths.get("." + logoPath);
                 if (Files.exists(filePath)) {
@@ -172,6 +197,7 @@ public class BakeryService {
         }
 
         stockRepository.deleteByBakeryId(id);
+        productStockRepository.deleteByBakeryId(id);
 
         bakeryRepository.delete(bakery);
     }

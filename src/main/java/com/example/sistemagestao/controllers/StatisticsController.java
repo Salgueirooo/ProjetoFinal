@@ -100,8 +100,8 @@ public class StatisticsController {
     }
 
     // quantidade de encomendas em cada mes por um certo ano na pastelaria X
-    @GetMapping("/orders-bakery/{bakery_id}")
-    public List<STMonthlyOrdersResponseDTO> getOrdersBakery(
+    @GetMapping("/all-by-bakery/{bakery_id}")
+    public STAllBakeryDTO getOrdersBakery(
             @PathVariable Long bakery_id,
             @RequestParam int year
     ) {
@@ -111,26 +111,67 @@ public class StatisticsController {
         if(year <= 0)
             throw new IllegalArgumentException("O Ano deve ser maior que zero.");
 
+        LocalDateTime startDate = LocalDateTime.of(year, 1, 1, 0, 0, 0);
+        LocalDateTime endDate   = LocalDateTime.of(year, 12, 31, 23, 59, 59);
+
         List<STMonthlyOrdersDTO> monthlyOrdersList =
                 orderRepository.getMonthlyDeliveredOrdersByBakery(bakery_id, year);
 
         Map<Integer, Long> totalsByMonth = monthlyOrdersList.stream()
                 .collect(Collectors.toMap(STMonthlyOrdersDTO::getMonthNumber, STMonthlyOrdersDTO::getTotalOrders));
 
-        List<STMonthlyOrdersResponseDTO> response = new ArrayList<>();
+        List<STMonthlyOrdersResponseDTO> monthlyOrders = new ArrayList<>();
 
         for (int i = 1; i <= 12; i++) {
             String monthName = getMonthName(i);
             Long total = totalsByMonth.getOrDefault(i, 0L);
-            response.add(new STMonthlyOrdersResponseDTO(monthName, total));
+            monthlyOrders.add(new STMonthlyOrdersResponseDTO(monthName, total));
         }
 
-        return response;
+        List<STProductSalesDTO> productSalesList = orderDetailsRepository
+                .getProductSalesBetweenDates(bakery_id, startDate, endDate);
+
+        List<STProductCostDTO> productCostList = orderDetailsRepository
+                .getProductRevenueBetweenDates(bakery_id, startDate, endDate);
+
+        STProductSalesDTO topProductSale = orderDetailsRepository
+                .findTopProductBySalesBetweenDates(bakery_id, startDate, endDate, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        STProductCostDTO topProductCost = orderDetailsRepository
+                .findTopProductByRevenueBetweenDates(bakery_id, startDate, endDate, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        STClientSalesDTO topClientSale = orderDetailsRepository
+                .findTopClientBySalesBetweenDates(bakery_id, startDate, endDate, PageRequest.of(0,1))
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        STClientSpendingDTO topClientSpending = orderDetailsRepository
+                .findTopClientBySpendingBetweenDates(bakery_id, startDate, endDate, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        return new STAllBakeryDTO(
+                monthlyOrders,
+                productSalesList,
+                productCostList,
+                topProductSale,
+                topProductCost,
+                topClientSale,
+                topClientSpending
+        );
     }
 
     // quantidade de encomendas em cada mes por um certo ano sobre o cliente
     @GetMapping("/orders-user/{bakery_id}")
-    public List<STMonthlyOrdersResponseDTO> getOrdersUser(
+    public STUserDTO getOrdersUser(
             @PathVariable Long bakery_id,
             @RequestParam int year,
             @AuthenticationPrincipal User user
@@ -147,15 +188,24 @@ public class StatisticsController {
         Map<Integer, Long> totalsByMonth = monthlyOrdersList.stream()
                 .collect(Collectors.toMap(STMonthlyOrdersDTO::getMonthNumber, STMonthlyOrdersDTO::getTotalOrders));
 
-        List<STMonthlyOrdersResponseDTO> response = new ArrayList<>();
+        List<STMonthlyOrdersResponseDTO> monthlyOrders = new ArrayList<>();
 
         for (int i = 1; i <= 12; i++) {
             String monthName = getMonthName(i);
             Long total = totalsByMonth.getOrDefault(i, 0L);
-            response.add(new STMonthlyOrdersResponseDTO(monthName, total));
+            monthlyOrders.add(new STMonthlyOrdersResponseDTO(monthName, total));
         }
 
-        return response;
+        LocalDateTime startDate = LocalDateTime.of(year, 1, 1, 0, 0, 0);
+        LocalDateTime endDate   = LocalDateTime.of(year, 12, 31, 23, 59, 59);
+
+        List<STProductSalesDTO> top10Products = orderDetailsRepository
+                .findTopProductsBoughtByClient(bakery_id, user.getId(), startDate, endDate, PageRequest.of(0,10));
+
+        STClientSpendingDTO totalSpent = orderDetailsRepository
+                .findTotalSpentByClientBetweenDates(bakery_id, user.getId(), startDate, endDate);
+
+        return new STUserDTO(monthlyOrders, top10Products, totalSpent);
     }
 
 

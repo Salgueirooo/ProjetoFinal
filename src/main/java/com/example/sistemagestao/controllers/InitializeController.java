@@ -1,5 +1,7 @@
 package com.example.sistemagestao.controllers;
 
+import com.example.sistemagestao.domain.MeasurentUnits;
+import com.example.sistemagestao.dto.UnitDTO;
 import com.example.sistemagestao.dto.WSMessageDTO;
 import com.example.sistemagestao.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/initialize")
@@ -21,6 +26,13 @@ public class InitializeController {
     @GetMapping
     public String initiallize(){
         return "Conectado ao Servidor.";
+    }
+
+    @GetMapping("/get-measurent-units")
+    public List<UnitDTO> getMeasureUnits(){
+        return Arrays.stream(MeasurentUnits.values())
+                .map(u -> new UnitDTO(u.getSymbol(), u.getDescription()))
+                .toList();
     }
 
     @GetMapping("/notify")

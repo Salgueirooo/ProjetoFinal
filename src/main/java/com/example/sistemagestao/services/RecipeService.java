@@ -52,11 +52,15 @@ public class RecipeService {
     }
 
     @Transactional
-    public void update(Long id, String preparation){
+    public void update(Long id, RecipeRequestDTO newData) {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Receita não encontrada."));
 
-        recipe.setPreparation(preparation);
+        if(newData.nResultingProducts() != null && newData.nResultingProducts() < 0) {
+            throw new IllegalArgumentException("O número de produtos resultantes deve ser maior que 0.");
+        }
+
+        recipe.upgradeRecipe(newData);
         recipeRepository.save(recipe);
     }
 
@@ -181,22 +185,6 @@ public class RecipeService {
         List<Long> productIds = products.stream()
                 .map(STProductQuantityDTO::productId)
                 .toList();
-
-        /*List<STRecipeIngredientDTO> recipeIngredients = recipeRepository.getIngredientsForProducts(productIds);
-
-        Map<Long, Double> recipeDoses = new HashMap<>();
-        Map<Long, Long> recipeTotalProducts = new HashMap<>();
-
-        for (STRecipeIngredientDTO ri : recipeIngredients) {
-            Long orderedQty = productQuantities.get(ri.productId());
-            if (orderedQty == null || orderedQty == 0)
-                continue;
-
-            double doses = (double) orderedQty / ri.recipeYield();
-
-            recipeDoses.merge(ri.recipeId(), doses, Double::sum);
-            recipeTotalProducts.merge(ri.recipeId(), orderedQty, Long::sum);
-        }*/
 
         List<Recipe> recipesByProductId =
                 recipeRepository.findByProduct_IdIn(productIds);

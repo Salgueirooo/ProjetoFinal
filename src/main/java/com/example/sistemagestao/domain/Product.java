@@ -21,6 +21,7 @@ public class Product {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)
@@ -37,22 +38,22 @@ public class Product {
     private Boolean active;
     private Double rating;
 
-    public Product(ProductRequestDTO data, Category category) {
+    public Product(ProductRequestDTO data, Category category, String image) {
         this.name = data.name();
         this.description = data.description();
         this.price = data.price();
-        this.image = data.image();
-        this.iva = data.iva() != null ? data.iva() : 0;
+        this.image = image;
+        this.iva = data.iva() != null ? data.iva() : 23;
         this.discount = data.discount() != null ? data.discount() : 0;
         this.active = data.active() != null ? data.active() : true;
         this.category = category;
         this.rating = 0.0;
     }
 
-    public void updateProduct(ProductRequestDTO data, Category category) {
+    public void updateProduct(ProductRequestDTO data, Category category, String image) {
         if (data.description() != null) this.description = data.description();
         if (data.price() != null) this.price = data.price();
-        if (data.image() != null) this.image = data.image();
+        if (data.image() != null) this.image = image;
         if (data.iva() != null) this.iva = data.iva();
         if (data.discount() != null) this.discount = data.discount();
         if (category != null) this.category = category;

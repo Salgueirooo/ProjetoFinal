@@ -205,4 +205,43 @@ public interface OrderDetailsRepository extends JpaRepository<OrderDetails, Long
             Pageable pageable
     );
 
+    @Query("""
+        SELECT new com.example.sistemagestao.dto.STProductSalesDTO(
+            od.product.name,
+            SUM(od.quantity)
+        )
+        FROM OrderDetails od
+        WHERE od.order.date BETWEEN :startDate AND :endDate
+            AND od.order.orderState = 'DELIVERED'
+            AND od.order.bakery.id = :bakeryId
+            AND od.order.user.id = :userId
+        GROUP BY od.product.name
+        ORDER BY SUM(od.quantity) DESC
+    """)
+    List<STProductSalesDTO> findTopProductsBoughtByClient(
+            @Param("bakeryId") Long bakeryId,
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT new com.example.sistemagestao.dto.STClientSpendingDTO(
+            od.order.user.name,
+            SUM((od.quantity * 1.0) * (od.price - (od.price * COALESCE(od.discount, 0) / 100.0)))
+        )
+        FROM OrderDetails od
+        WHERE od.order.date BETWEEN :startDate AND :endDate
+            AND od.order.orderState = 'DELIVERED'
+            AND od.order.bakery.id = :bakeryId
+            AND od.order.user.id = :userId
+        GROUP BY od.order.user.name
+    """)
+    STClientSpendingDTO findTotalSpentByClientBetweenDates(
+            @Param("bakeryId") Long bakeryId,
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

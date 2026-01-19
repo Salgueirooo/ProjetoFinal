@@ -17,7 +17,7 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public void addProduct(@RequestBody ProductRequestDTO data) {
+    public void addProduct(@ModelAttribute ProductRequestDTO data) {
         productService.add(data);
     }
 
@@ -27,7 +27,7 @@ public class ProductController {
     }
 
     @PutMapping("/update/{id}")
-    public void updateProduct(@PathVariable Long id, @RequestBody ProductRequestDTO newData) {
+    public void updateProduct(@PathVariable Long id, @ModelAttribute ProductRequestDTO newData) {
         productService.update(id, newData);
     }
 

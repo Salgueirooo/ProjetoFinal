@@ -6,6 +6,7 @@ import com.example.sistemagestao.domain.User;
 import com.example.sistemagestao.dto.UserResponseDTO;
 import com.example.sistemagestao.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class UserService {
                 .toList();
     }
 
-
+    @Transactional
     public void updateUser(Long id, Roles role){
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Utilizador não encontrado."));

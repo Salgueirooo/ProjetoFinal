@@ -16,7 +16,7 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PostMapping("/add")
-    public void addCategory(@RequestBody CategoryRequestDTO data){
+    public void addCategory(@ModelAttribute CategoryRequestDTO data){
         categoryService.add(data);
     }
 
@@ -31,7 +31,7 @@ public class CategoryController {
     }
 
     @PutMapping("/update/{id}")
-    public void updateCategory(@PathVariable Long id, @RequestBody CategoryRequestDTO newData){
+    public void updateCategory(@PathVariable Long id, @ModelAttribute CategoryRequestDTO newData){
         categoryService.update(id, newData);
     }
 

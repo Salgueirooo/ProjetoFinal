@@ -13,8 +13,15 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +33,11 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
     @Autowired
-    private RecipeRepository recipeRepository;
-    @Autowired
-    private ProducedRecipeRepository producedRecipeRepository;
-    @Autowired
-    private OrderDetailsRepository orderDetailsRepository;
-    @Autowired
     private ProductReviewRepository productReviewRepository;
     @Autowired
     private ProductStockService productStockService;
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -49,7 +52,39 @@ public class ProductService {
             throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
         }
 
-        Product productData = new Product(data, category);
+        String imagePath = "/uploads/no-photo.jpg";
+        MultipartFile image = data.image();
+
+        if (image != null && !image.isEmpty()) {
+
+            if (image.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
+            }
+
+            String contentType = image.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
+
+            String uploadDir = "uploads/products/";
+            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao guardar imagem do logotipo.", e);
+            }
+
+            imagePath = "/uploads/products/" + fileName;
+        }
+
+        Product productData = new Product(data, category, imagePath);
         productRepository.save(productData);
 
         productStockService.initialize(productData.getId());
@@ -76,40 +111,65 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
 
-        if(newData.name().equalsIgnoreCase(product.getName()) || newData.name().equalsIgnoreCase("")) {
-            Category category = null;
-            if (newData.categoryId() != null) {
-                category = categoryRepository.findById(newData.categoryId())
-                        .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
-            }
-
-            if (newData.discount() < 0 || newData.discount() > 100) {
-                throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
-            }
-
-            if (newData.price() < 0)
-                throw new IllegalStateException("O Preço deve ser um número positivo.");
-
-            product.updateProduct(newData, category);
-
-        } else {
-            if (productRepository.existsByName(newData.name())) {
-                throw new EntityExistsException("Já existe um Produto com esse nome.");
-            }
-
-            if (recipeRepository.existsByProductId(product.getId()))
-                throw new EntityExistsException("Este produto já tem uma Receita associada.");
-
-            if (producedRecipeRepository.existsByRecipe_Product_Id(product.getId()))
-                throw new EntityExistsException("Já foram produzidas receitas deste Produto.");
-
-            if (orderDetailsRepository.existsByProductId(product.getId()))
-                throw new EntityExistsException("Este Produto já foi encomendado.");
-
-            product.setName(newData.name());
+        Category category = null;
+        if (newData.categoryId() != null) {
+            category = categoryRepository.findById(newData.categoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
         }
 
+        if (newData.discount() != null && (newData.discount() < 0 || newData.discount() > 100)) {
+            throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
+        }
+
+        if (newData.price() != null && newData.price() < 0)
+            throw new IllegalStateException("O Preço deve ser um número positivo.");
+
+        String logoPath = product.getImage();
+
+        MultipartFile newLogo = newData.image();
+        if (newLogo != null && !newLogo.isEmpty()) {
+
+            if (newLogo.getSize() > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
+            }
+
+            String contentType = newLogo.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
+            }
+
+            String uploadDir = "uploads/products/";
+            String fileName = UUID.randomUUID() + "_" + newLogo.getOriginalFilename();
+            Path uploadPath = Paths.get(uploadDir);
+
+            try {
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
+                    Path oldFile = Paths.get("." + logoPath);
+                    if (Files.exists(oldFile)) {
+                        Files.delete(oldFile);
+                    }
+                }
+
+                Files.copy(newLogo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                logoPath = "/uploads/products/" + fileName;
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+            }
+        }
+
+        Integer currentDiscount = product.getDiscount();
+
+        product.updateProduct(newData, category, logoPath);
         productRepository.save(product);
+
+        if (newData.discount() != null &&  currentDiscount < newData.discount()) {
+            notificationService.sendAll("O produto '" + product.getName() + "' está agora em promoção!");
+        }
     }
 
     @Transactional

@@ -36,7 +36,10 @@ public class Order {
     @Column(nullable = false)
     private OrderStates orderState;
 
+    @Column(columnDefinition = "TEXT")
     private String clientNotes;
+
+    @Column(columnDefinition = "TEXT")
     private String staffNotes;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
