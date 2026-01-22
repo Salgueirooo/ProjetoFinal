@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -34,7 +35,12 @@ public class SystemConfigService {
         SystemConfig systemConfig = systemConfigRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Configuração não encontrada."));
 
-        systemConfig.setConfigValue(configValue);
+        if (systemConfig.getConfigKey().contains("TIME")) {
+            systemConfig.setConfigValue(configValue.replace("\"", ""));
+        } else {
+            systemConfig.setConfigValue(configValue);
+        }
+
         systemConfigRepository.save(systemConfig);
     }
 

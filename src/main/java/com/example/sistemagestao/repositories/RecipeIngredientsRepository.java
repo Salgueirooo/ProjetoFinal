@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface RecipeIngredientsRepository extends JpaRepository<RecipeIngredient, Long> {
     List<RecipeIngredient> findAllByRecipeId(Long recipeId);
+    List<RecipeIngredient> findAllByRecipeIdOrderByIngredient_NameAsc(Long recipeId);
     List<RecipeIngredient> findAllByIngredientId(Long ingredientId);
     List<RecipeIngredient> findByRecipeIdIn(Collection<Long> productIds);
 

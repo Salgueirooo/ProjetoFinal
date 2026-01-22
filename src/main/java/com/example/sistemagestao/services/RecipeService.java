@@ -114,7 +114,7 @@ public class RecipeService {
         if(!recipeRepository.existsById(id))
             throw new EntityNotFoundException("Receita não encontrada.");
 
-        return recipeIngredientsRepository.findAllByRecipeId(id)
+        return recipeIngredientsRepository.findAllByRecipeIdOrderByIngredient_NameAsc(id)
                 .stream()
                 .map(RecipeIngredientResponseDTO::new)
                 .toList();

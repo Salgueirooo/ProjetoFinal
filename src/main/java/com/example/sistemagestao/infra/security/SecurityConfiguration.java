@@ -48,9 +48,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/login",
-                                "/api/auth/register",
                                 "/api/auth/register-client",
-                                "/api/initialize/**",
+                                "/api/initialize/test-connection",
                                 "/uploads/**")
                         .permitAll()
 
@@ -62,8 +61,10 @@ public class SecurityConfiguration {
                                 "/api/order/order-in-cart/*",
                                 "/api/order/all-by-user/*",
                                 "/api/order/search-day-by-user/*",
+                                "/api/product-review/get/*",
                                 "/api/statistics/orders-user/*",
-                                "/api/user/get-username"
+                                "/api/user/get-username",
+                                "api/system-config/**"
                         )
                         .hasRole("CLIENT")
 
@@ -84,8 +85,9 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/api/order/set-order-ready/*",
                                 "/api/order/set-order-delivered/*",
-                                "/api/order/search-username-day/*",
-                                "/api/order/get-accepted-by-date/"
+                                "/api/order/search-email-day/*",
+                                "/api/order/get-accepted-by-date/*",
+                                "/api/order/get-ready-by-date/*"
                         )
                         .hasRole("COUNTER_EMPLOYEE")
 
@@ -113,7 +115,6 @@ public class SecurityConfiguration {
                                 "/api/order/**",
                                 "/api/statistics/**",
                                 "/api/system-config/**"
-
                         )
                         .hasRole("ADMIN")
 

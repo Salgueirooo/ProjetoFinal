@@ -1,6 +1,8 @@
 package com.example.sistemagestao.controllers;
 
 import com.example.sistemagestao.domain.MeasurentUnits;
+import com.example.sistemagestao.domain.Roles;
+import com.example.sistemagestao.dto.RoleDTO;
 import com.example.sistemagestao.dto.UnitDTO;
 import com.example.sistemagestao.dto.WSMessageDTO;
 import com.example.sistemagestao.services.NotificationService;
@@ -23,7 +25,7 @@ public class InitializeController {
     @Autowired
     private NotificationService notificationService;
 
-    @GetMapping
+    @GetMapping("/test-connection")
     public String initiallize(){
         return "Conectado ao Servidor.";
     }
@@ -35,7 +37,14 @@ public class InitializeController {
                 .toList();
     }
 
-    @GetMapping("/notify")
+    @GetMapping("/get-roles")
+    public List<RoleDTO> getRoles(){
+        return Arrays.stream(Roles.values())
+                .map(r -> new RoleDTO(r.getRole(), r.getDescription()))
+                .toList();
+    }
+
+    /*@GetMapping("/notify")
     public String sendNotification(@RequestParam String message) {
         messagingTemplate.convertAndSendToUser(
                 "ro@gmail.com",
@@ -55,5 +64,5 @@ public class InitializeController {
     public String sendNotificationToAll(@RequestParam String message) {
         notificationService.sendAll(message);
         return "Mensagem enviada!";
-    }
+    }*/
 }

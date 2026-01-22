@@ -65,23 +65,4 @@ public class AuthenticationController {
 
         return ResponseEntity.ok().build();
     }
-
-    @PostMapping("/register")
-    public ResponseEntity register(@RequestBody RegisterDTO data){
-        if(this.userRepository.findByEmail(data.email()) != null){
-            throw new EntityExistsException("Já existe um utilizador com este email.");
-        }
-
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User newUser = new User(data.name(), data.email(), encryptedPassword, data.role(), data.phone_number());
-
-        this.userRepository.save(newUser);
-
-        List<Bakery> bakeryList = bakeryRepository.findAll();
-        for(Bakery bakery : bakeryList){
-            orderService.initialize(bakery.getId(), newUser);
-        }
-
-        return ResponseEntity.ok().build();
-    }
 }

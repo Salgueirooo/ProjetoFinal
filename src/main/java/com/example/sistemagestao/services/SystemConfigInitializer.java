@@ -14,9 +14,9 @@ public class SystemConfigInitializer {
     @PostConstruct
     public void init() {
         createIfMissing("MAX_REVIEW_DAYS", "Prazo máximo para submeter uma classificação a um produto", "7");
-        createIfMissing("MAX_ORDER_CANCEL_HOURS", "Prazo máximo para cancelar uma encomenda","48");
-        createIfMissing("MIN_ORDER_HOURS", "Mínima antecipação para fazer uma encomenda", "24");
-        createIfMissing("CHECK_STOCK_DAYS", "Intervalo de verificação de stock", "2");
+        createIfMissing("MAX_ORDER_CANCEL_HOURS", "Prazo máximo (em horas) para cancelar uma encomenda","48");
+        createIfMissing("MIN_ORDER_HOURS", "Mínima antecipação (em horas) para fazer uma encomenda", "24");
+        createIfMissing("CHECK_STOCK_DAYS", "Intervalo de verificação de stock (em dias)", "2");
         createIfMissing("OPENING_TIME", "Horário de abertura", "08:00");
         createIfMissing("CLOSING_TIME", "Horário de fecho", "20:00");
     }

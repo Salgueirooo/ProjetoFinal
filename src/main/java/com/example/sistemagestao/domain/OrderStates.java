@@ -15,7 +15,8 @@ public enum OrderStates {
     ACCEPTED("Aceite"),
     REJECTED("Recusada"),
     READY("Pronta"),
-    DELIVERED("Entregue");
+    DELIVERED("Entregue"),
+    NOTDELIVERED("Não entregue");
 
     private final String state;
 }

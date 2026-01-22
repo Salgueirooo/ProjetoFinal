@@ -23,7 +23,7 @@ public class Recipe {
     @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String preparation;
 
     @Column(nullable = false)

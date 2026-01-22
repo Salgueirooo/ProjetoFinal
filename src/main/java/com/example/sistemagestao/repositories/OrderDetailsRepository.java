@@ -1,9 +1,11 @@
 package com.example.sistemagestao.repositories;
 
 import com.example.sistemagestao.domain.OrderDetails;
+import com.example.sistemagestao.domain.OrderStates;
 import com.example.sistemagestao.dto.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +19,17 @@ public interface OrderDetailsRepository extends JpaRepository<OrderDetails, Long
     List<OrderDetails> findAllByOrderId(Long orderId);
     boolean existsByProductId(Long productId);
     int countAllByOrderId(Long orderId);
+
+    @Modifying
+    @Query("""
+        DELETE FROM OrderDetails od
+        WHERE od.product.id = :productId
+          AND od.order.orderState = :state
+    """)
+    void deleteAllByProductIdAndOrderState(
+            @Param("productId") Long productId,
+            @Param("state") OrderStates state
+    );
 
     @Query("""
         SELECT new com.example.sistemagestao.dto.STProductQuantityDTO(

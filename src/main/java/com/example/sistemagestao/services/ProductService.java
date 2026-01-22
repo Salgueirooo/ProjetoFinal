@@ -1,6 +1,8 @@
 package com.example.sistemagestao.services;
 
 import com.example.sistemagestao.domain.Category;
+import com.example.sistemagestao.domain.OrderDetails;
+import com.example.sistemagestao.domain.OrderStates;
 import com.example.sistemagestao.domain.Product;
 import com.example.sistemagestao.dto.ProductDetailsResponseDTO;
 import com.example.sistemagestao.dto.ProductRequestDTO;
@@ -38,6 +40,8 @@ public class ProductService {
     private ProductStockService productStockService;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private OrderDetailsRepository orderDetailsRepository;
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -187,6 +191,10 @@ public class ProductService {
     public void changeStateById(Long id){
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado."));
+
+        if (product.getActive()) {
+            orderDetailsRepository.deleteAllByProductIdAndOrderState(product.getId(), OrderStates.INCART);
+        }
 
         product.toggleActive();
         productRepository.save(product);
