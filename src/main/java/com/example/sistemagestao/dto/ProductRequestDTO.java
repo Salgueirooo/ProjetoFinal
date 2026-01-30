@@ -8,7 +8,6 @@ public record ProductRequestDTO(
         Double price,
         MultipartFile image,
         Long categoryId,
-        Integer iva,
         Integer discount,
         Boolean active
 ) {

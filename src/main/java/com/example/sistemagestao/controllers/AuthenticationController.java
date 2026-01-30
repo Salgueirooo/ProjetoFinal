@@ -38,13 +38,20 @@ public class AuthenticationController {
     private OrderService orderService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody AuthenticationDTO data){
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
+    public ResponseEntity<?> login(@RequestBody AuthenticationDTO data) {
+        try {
+            var tokenAuth = new UsernamePasswordAuthenticationToken(data.email(), data.password());
 
-        var token = tokenService.generateToken((User) auth.getPrincipal());
+            var auth = authenticationManager.authenticate(tokenAuth);
 
-        return ResponseEntity.ok(new LoginResponseDTO(token));
+            var token = tokenService.generateToken((User) auth.getPrincipal());
+            return ResponseEntity.ok(new LoginResponseDTO(token));
+
+        } catch (BadCredentialsException ex) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Email ou password inválidos");
+        }
     }
 
     @PostMapping("/register-client")

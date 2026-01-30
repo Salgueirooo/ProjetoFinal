@@ -32,8 +32,6 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
-
-    private Integer iva;
     private Integer discount;
     private Boolean active;
     private Double rating;
@@ -43,7 +41,6 @@ public class Product {
         this.description = data.description();
         this.price = data.price();
         this.image = image;
-        this.iva = data.iva() != null ? data.iva() : 23;
         this.discount = data.discount() != null ? data.discount() : 0;
         this.active = data.active() != null ? data.active() : true;
         this.category = category;
@@ -54,7 +51,6 @@ public class Product {
         if (data.description() != null) this.description = data.description();
         if (data.price() != null) this.price = data.price();
         if (data.image() != null) this.image = image;
-        if (data.iva() != null) this.iva = data.iva();
         if (data.discount() != null) this.discount = data.discount();
         if (category != null) this.category = category;
     }

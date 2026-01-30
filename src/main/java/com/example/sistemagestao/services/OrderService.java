@@ -4,7 +4,7 @@ import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.*;
 import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -107,7 +107,10 @@ public class OrderService {
         updateUnitaryPrices(order.getId());
 
         order.setOrderState(OrderStates.PENDING);
-        order.setClientNotes(data.clientNotes());
+
+        if (!data.clientNotes().isEmpty())
+            order.setClientNotes(data.clientNotes());
+
         order.setRequestDate(now);
         order.setDate(data.date());
         orderRepository.save(order);
@@ -183,7 +186,9 @@ public class OrderService {
             order.setOrderState(OrderStates.REJECTED);
         }
 
-        order.setStaffNotes(data.staffNotes());
+        if (!data.staffNotes().isEmpty()) {
+            order.setStaffNotes(data.staffNotes());
+        }
 
         orderRepository.save(order);
 

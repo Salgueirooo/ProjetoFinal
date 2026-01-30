@@ -68,4 +68,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("bakeryId") Long bakeryId,
             @Param("year") int year
     );
+
+    List<Order> findAllByOrderStateAndDateLessThanEqual(OrderStates state, LocalDateTime maxDate);
 }

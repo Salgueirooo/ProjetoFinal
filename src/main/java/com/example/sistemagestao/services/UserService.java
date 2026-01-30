@@ -6,7 +6,7 @@ import com.example.sistemagestao.domain.User;
 import com.example.sistemagestao.dto.UserResponseDTO;
 import com.example.sistemagestao.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

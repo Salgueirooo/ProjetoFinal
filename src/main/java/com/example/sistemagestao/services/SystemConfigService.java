@@ -8,6 +8,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -31,6 +32,7 @@ public class SystemConfigService {
                 .orElseThrow(() ->  new EntityNotFoundException("Não foi encontrada nenhuma variável '" + configKey + "'."));
     }
 
+    @Transactional
     public void updateConfig(Long id, String configValue) {
         SystemConfig systemConfig = systemConfigRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Configuração não encontrada."));

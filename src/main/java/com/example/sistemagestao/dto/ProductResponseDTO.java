@@ -9,7 +9,6 @@ public record ProductResponseDTO(
         Double price,
         String image,
         Double rating,
-        Integer iva,
         Integer discount,
         Boolean active,
         String categoryName
@@ -22,7 +21,6 @@ public record ProductResponseDTO(
             product.getPrice(),
             product.getImage(),
             product.getRating(),
-            product.getIva(),
             product.getDiscount(),
             product.getActive(),
             product.getCategory() != null ? product.getCategory().getName() : null
