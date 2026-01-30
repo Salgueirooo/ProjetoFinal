@@ -28,6 +28,7 @@ public class Product {
     private Double price;
 
     private String image;
+    private String image_id;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
@@ -36,21 +37,23 @@ public class Product {
     private Boolean active;
     private Double rating;
 
-    public Product(ProductRequestDTO data, Category category, String image) {
+    public Product(ProductRequestDTO data, Category category, String image, String image_id) {
         this.name = data.name();
         this.description = data.description();
         this.price = data.price();
         this.image = image;
+        this.image_id = image_id;
         this.discount = data.discount() != null ? data.discount() : 0;
         this.active = data.active() != null ? data.active() : true;
         this.category = category;
         this.rating = 0.0;
     }
 
-    public void updateProduct(ProductRequestDTO data, Category category, String image) {
+    public void updateProduct(ProductRequestDTO data, Category category, String image,  String image_id) {
         if (data.description() != null) this.description = data.description();
         if (data.price() != null) this.price = data.price();
         if (data.image() != null) this.image = image;
+        if (image_id != null) this.image_id = image_id;
         if (data.discount() != null) this.discount = data.discount();
         if (category != null) this.category = category;
     }

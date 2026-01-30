@@ -1,5 +1,7 @@
 package com.example.sistemagestao.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.sistemagestao.domain.Category;
 import com.example.sistemagestao.domain.OrderDetails;
 import com.example.sistemagestao.domain.OrderStates;
@@ -11,6 +13,7 @@ import com.example.sistemagestao.dto.ProductReviewResponseDTO;
 import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -42,6 +46,16 @@ public class ProductService {
     private NotificationService notificationService;
     @Autowired
     private OrderDetailsRepository orderDetailsRepository;
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Value("${DEFAULT_IMAGE_URL}")
+    private String imageDefault;
+
+    @Value("${DEFAULT_IMAGE_PUBLIC_ID}")
+    private String imageDefaultPublicId;
+
+    private final String folder = "baketec/products";
 
     @Transactional
     public void add(ProductRequestDTO data) {
@@ -56,7 +70,9 @@ public class ProductService {
             throw new IllegalStateException("Valor inválido para o Desconto (0-100).");
         }
 
-        String imagePath = "/uploads/no-photo.jpg";
+        String imagePath = imageDefault;
+        String imagePublicId = imageDefaultPublicId;
+
         MultipartFile image = data.image();
 
         if (image != null && !image.isEmpty()) {
@@ -70,25 +86,27 @@ public class ProductService {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/products/";
-            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+                String publicId = UUID.randomUUID().toString();
 
-                Files.copy(image.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                Map uploadResult = cloudinary.uploader().upload(
+                        image.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", publicId,
+                                "overwrite", true
+                        )
+                );
+
+                imagePath = uploadResult.get("secure_url").toString();
+                imagePublicId = uploadResult.get("public_id").toString();
 
             } catch (IOException e) {
-                throw new RuntimeException("Erro ao guardar imagem do logotipo.", e);
+                throw new RuntimeException("Erro ao enviar imagem para o Cloudinary.", e);
             }
-
-            imagePath = "/uploads/products/" + fileName;
         }
 
-        Product productData = new Product(data, category, imagePath);
+        Product productData = new Product(data, category, imagePath, imagePublicId);
         productRepository.save(productData);
 
         productStockService.initialize(productData.getId());
@@ -128,47 +146,48 @@ public class ProductService {
         if (newData.price() != null && newData.price() < 0)
             throw new IllegalStateException("O Preço deve ser um número positivo.");
 
-        String logoPath = product.getImage();
+        String imagePath = product.getImage();
+        String imagePublicId = product.getImage_id();
 
-        MultipartFile newLogo = newData.image();
-        if (newLogo != null && !newLogo.isEmpty()) {
+        MultipartFile newImage = newData.image();
+        if (newImage != null && !newImage.isEmpty()) {
 
-            if (newLogo.getSize() > 5 * 1024 * 1024) {
+            if (newImage.getSize() > 5 * 1024 * 1024) {
                 throw new IllegalArgumentException("Imagem demasiado grande (máx. 5MB).");
             }
 
-            String contentType = newLogo.getContentType();
+            String contentType = newImage.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/products/";
-            String fileName = UUID.randomUUID() + "_" + newLogo.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                if (imagePublicId != null && !imagePublicId.equals(imageDefaultPublicId)) {
+                    cloudinary.uploader().destroy(imagePublicId, ObjectUtils.emptyMap());
                 }
 
-                if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
-                    Path oldFile = Paths.get("." + logoPath);
-                    if (Files.exists(oldFile)) {
-                        Files.delete(oldFile);
-                    }
-                }
+                String newPublicId = UUID.randomUUID().toString();
 
-                Files.copy(newLogo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-                logoPath = "/uploads/products/" + fileName;
+                Map uploadResult = cloudinary.uploader().upload(
+                        newImage.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", newPublicId,
+                                "overwrite", true
+                        )
+                );
+
+                imagePath = uploadResult.get("secure_url").toString();
+                imagePublicId = uploadResult.get("public_id").toString();
 
             } catch (IOException e) {
-                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo.", e);
             }
         }
 
         Integer currentDiscount = product.getDiscount();
 
-        product.updateProduct(newData, category, logoPath);
+        product.updateProduct(newData, category, imagePath, imagePublicId);
         productRepository.save(product);
 
         if (newData.discount() != null &&  currentDiscount < newData.discount()) {

@@ -56,7 +56,7 @@ public class AuthenticationController {
 
     @PostMapping("/register-client")
     public ResponseEntity registerClient(@RequestBody RegisterDTO data){
-        if(this.userRepository.findByEmail(data.email()) != null){
+        if (this.userRepository.findByEmail(data.email()).isPresent()) {
             throw new EntityExistsException("Já existe um utilizador com este email.");
         }
 

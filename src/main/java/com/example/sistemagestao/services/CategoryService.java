@@ -1,5 +1,7 @@
 package com.example.sistemagestao.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.sistemagestao.domain.Category;
 import com.example.sistemagestao.domain.Product;
 import com.example.sistemagestao.dto.CategoryRequestDTO;
@@ -8,6 +10,7 @@ import com.example.sistemagestao.repositories.CategoryRepository;
 import com.example.sistemagestao.repositories.ProductRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -32,13 +36,26 @@ public class CategoryService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Value("${DEFAULT_IMAGE_URL}")
+    private String imageDefault;
+
+    @Value("${DEFAULT_IMAGE_PUBLIC_ID}")
+    private String imageDefaultPublicId;
+
+    private final String folder = "baketec/categories";
+
     @Transactional
     public void add(CategoryRequestDTO data) {
         if (categoryRepository.existsByName(data.name())) {
             throw new EntityExistsException("Já existe uma Categoria com esse nome.");
         }
 
-        String imagePath = "/uploads/no-photo.jpg";
+        String imagePath = imageDefault;
+        String imagePublicId = imageDefaultPublicId;
+
         MultipartFile image = data.image();
 
         if (image != null && !image.isEmpty()) {
@@ -52,29 +69,27 @@ public class CategoryService {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/categories/";
-            String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+                String publicId = UUID.randomUUID().toString();
 
-                Files.copy(
-                        image.getInputStream(),
-                        uploadPath.resolve(fileName),
-                        StandardCopyOption.REPLACE_EXISTING
+                Map uploadResult = cloudinary.uploader().upload(
+                        image.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", publicId,
+                                "overwrite", true
+                        )
                 );
 
-            } catch (IOException e) {
-                throw new RuntimeException("Erro ao guardar imagem.", e);
-            }
+                imagePath = uploadResult.get("secure_url").toString();
+                imagePublicId = uploadResult.get("public_id").toString();
 
-            imagePath = "/uploads/categories/" + fileName;
+            } catch (IOException e) {
+                throw new RuntimeException("Erro ao enviar imagem para o Cloudinary.", e);
+            }
         }
 
-        Category category = new Category(data, imagePath);
+        Category category = new Category(data, imagePath, imagePublicId);
         categoryRepository.save(category);
     }
 
@@ -95,8 +110,10 @@ public class CategoryService {
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
 
         String imagePath = category.getImage();
+        String imagePublicId = category.getImage_id();
 
         MultipartFile newImage = newData.image();
+
         if (newImage != null && !newImage.isEmpty()) {
 
             if (newImage.getSize() > 5 * 1024 * 1024) {
@@ -108,31 +125,31 @@ public class CategoryService {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/categories/";
-            String fileName = UUID.randomUUID() + "_" + newImage.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                if (imagePublicId != null && !imagePublicId.equals(imageDefaultPublicId)) {
+                    cloudinary.uploader().destroy(imagePublicId, ObjectUtils.emptyMap());
                 }
 
-                if (imagePath != null && !imagePath.isBlank() && !imagePath.equals("/uploads/no-photo.jpg")) {
-                    Path oldFile = Paths.get("." + imagePath);
-                    if (Files.exists(oldFile)) {
-                        Files.delete(oldFile);
-                    }
-                }
+                String newPublicId = UUID.randomUUID().toString();
 
-                Files.copy(newImage.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-                imagePath = "/uploads/categories/" + fileName;
+                Map uploadResult = cloudinary.uploader().upload(
+                        newImage.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", newPublicId,
+                                "overwrite", true
+                        )
+                );
+
+                imagePath = uploadResult.get("secure_url").toString();
+                imagePublicId = uploadResult.get("public_id").toString();
 
             } catch (IOException e) {
-                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo.", e);
             }
         }
 
-        category.updateCategory(imagePath);
+        category.updateCategory(imagePath, imagePublicId);
         categoryRepository.save(category);
     }
 
@@ -141,15 +158,15 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada."));
 
-        String imagePath = category.getImage();
-        if (imagePath != null && !imagePath.isBlank() && !imagePath.equals("/uploads/no-photo.jpg")) {
+        if (category.getImage_id() != null && !category.getImage_id().equals(imageDefaultPublicId)) {
+
             try {
-                Path filePath = Paths.get("." + imagePath);
-                if (Files.exists(filePath)) {
-                    Files.delete(filePath);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Erro ao eliminar a imagem.", e);
+                cloudinary.uploader().destroy(
+                        category.getImage_id(),
+                        ObjectUtils.emptyMap()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao eliminar imagem do Cloudinary.", e);
             }
         }
 

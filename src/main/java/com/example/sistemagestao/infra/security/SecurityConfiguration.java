@@ -64,7 +64,7 @@ public class SecurityConfiguration {
                                 "/api/product-review/get/*",
                                 "/api/statistics/orders-user/*",
                                 "/api/user/get-username",
-                                "api/system-config/**"
+                                "/api/system-config/**"
                         )
                         .hasRole("CLIENT")
 

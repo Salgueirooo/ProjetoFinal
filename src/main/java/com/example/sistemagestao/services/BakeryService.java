@@ -1,11 +1,14 @@
 package com.example.sistemagestao.services;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.sistemagestao.domain.*;
 import com.example.sistemagestao.dto.BakeryRequestDTO;
 import com.example.sistemagestao.dto.BakeryResponseDTO;
 import com.example.sistemagestao.repositories.*;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -46,14 +50,25 @@ public class BakeryService {
     private ProductRepository productRepository;
     @Autowired
     private ProductStockRepository productStockRepository;
+    @Autowired
+    private Cloudinary cloudinary;
+
+    @Value("${DEFAULT_IMAGE_URL}")
+    private String imageDefault;
+
+    @Value("${DEFAULT_IMAGE_PUBLIC_ID}")
+    private String imageDefaultPublicId;
+
+    private final String folder = "baketec/bakeries";
 
     @Transactional
     public void add(BakeryRequestDTO data) {
         if (bakeryRepository.existsByName(data.name())) {
             throw new EntityExistsException("Já existe uma Pastelaria com esse nome.");
         }
+        String logoPath = imageDefault;
+        String logoPublicId = imageDefaultPublicId;
 
-        String logoPath = "/uploads/no-photo.jpg";
         MultipartFile logo = data.logo();
 
         if (logo != null && !logo.isEmpty()) {
@@ -67,25 +82,27 @@ public class BakeryService {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/bakeries/";
-            String fileName = UUID.randomUUID() + "_" + logo.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+                String publicId = UUID.randomUUID().toString();
 
-                Files.copy(logo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                Map uploadResult = cloudinary.uploader().upload(
+                        logo.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", publicId,
+                                "overwrite", true
+                        )
+                );
+
+                logoPath = uploadResult.get("secure_url").toString();
+                logoPublicId = uploadResult.get("public_id").toString();
 
             } catch (IOException e) {
-                throw new RuntimeException("Erro ao guardar imagem do logotipo.", e);
+                throw new RuntimeException("Erro ao enviar imagem para o Cloudinary.", e);
             }
-
-            logoPath = "/uploads/bakeries/" + fileName;
         }
 
-        Bakery bakery = new Bakery(data, logoPath);
+        Bakery bakery = new Bakery(data, logoPath, logoPublicId);
         bakeryRepository.save(bakery);
 
         List<Ingredient> ingredients = ingredientRepository.findAll();
@@ -116,8 +133,10 @@ public class BakeryService {
                 .orElseThrow(() -> new EntityNotFoundException("Pastelaria não encontrada."));
 
         String logoPath = bakery.getLogo();
+        String logoPublicId = bakery.getLogo_id();
 
         MultipartFile newLogo = newData.logo();
+
         if (newLogo != null && !newLogo.isEmpty()) {
 
             if (newLogo.getSize() > 5 * 1024 * 1024) {
@@ -129,31 +148,31 @@ public class BakeryService {
                 throw new IllegalArgumentException("O ficheiro enviado não é uma imagem.");
             }
 
-            String uploadDir = "uploads/bakeries/";
-            String fileName = UUID.randomUUID() + "_" + newLogo.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-
             try {
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                if (logoPublicId != null && !logoPublicId.equals(imageDefaultPublicId)) {
+                    cloudinary.uploader().destroy(logoPublicId, ObjectUtils.emptyMap());
                 }
 
-                if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
-                    Path oldFile = Paths.get("." + logoPath);
-                    if (Files.exists(oldFile)) {
-                        Files.delete(oldFile);
-                    }
-                }
+                String newPublicId = UUID.randomUUID().toString();
 
-                Files.copy(newLogo.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
-                logoPath = "/uploads/bakeries/" + fileName;
+                Map uploadResult = cloudinary.uploader().upload(
+                        newLogo.getBytes(),
+                        ObjectUtils.asMap(
+                                "folder", folder,
+                                "public_id", newPublicId,
+                                "overwrite", true
+                        )
+                );
+
+                logoPath = uploadResult.get("secure_url").toString();
+                logoPublicId = uploadResult.get("public_id").toString();
 
             } catch (IOException e) {
-                throw new RuntimeException("Erro ao atualizar imagem do logotipo", e);
+                throw new RuntimeException("Erro ao atualizar imagem do logotipo.", e);
             }
         }
 
-        bakery.updateBakery(newData, logoPath);
+        bakery.updateBakery(newData, logoPath, logoPublicId);
         bakeryRepository.save(bakery);
     }
 
@@ -168,15 +187,15 @@ public class BakeryService {
         if(productStockRepository.existsByBakeryIdAndQuantityGreaterThan(id, 0))
             throw new IllegalStateException("Não é possível eliminar esta pastelaria: Ainda existe stock de produtos nesta pastelaria!");
 
-        String logoPath = bakery.getLogo();
-        if (logoPath != null && !logoPath.isBlank() && !logoPath.equals("/uploads/no-photo.jpg")) {
+        if (bakery.getLogo_id() != null && !bakery.getLogo_id().equals(imageDefaultPublicId)) {
+
             try {
-                Path filePath = Paths.get("." + logoPath);
-                if (Files.exists(filePath)) {
-                    Files.delete(filePath);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Erro ao eliminar o logotipo da pastelaria.", e);
+                cloudinary.uploader().destroy(
+                        bakery.getLogo_id(),
+                        ObjectUtils.emptyMap()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao eliminar imagem do Cloudinary.", e);
             }
         }
 

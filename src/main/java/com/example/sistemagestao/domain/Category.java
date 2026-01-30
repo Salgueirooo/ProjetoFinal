@@ -24,14 +24,17 @@ public class Category {
     private String name;
 
     private String image;
+    private String image_id;
 
-    public Category (CategoryRequestDTO data, String image) {
+    public Category (CategoryRequestDTO data, String image, String imageId) {
         this.name = data.name();
         this.image = image;
+        this.image_id = imageId;
     }
 
-    public void updateCategory(String image) {
+    public void updateCategory(String image, String imageId) {
         if (image != null) this.image = image;
+        if (imageId != null) this.image_id = imageId;
     }
 
 }

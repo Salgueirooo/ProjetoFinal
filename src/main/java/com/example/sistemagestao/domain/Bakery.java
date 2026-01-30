@@ -22,6 +22,7 @@ public class Bakery {
     private String name;
 
     private String logo;
+    private String logo_id;
 
     @Column(nullable = false)
     private String phone_number;
@@ -32,16 +33,18 @@ public class Bakery {
     @Column(nullable = false)
     private String address;
 
-    public Bakery(BakeryRequestDTO data, String logo) {
+    public Bakery(BakeryRequestDTO data, String logo, String logo_id) {
         this.name = data.name();
         this.logo = logo;
+        this.logo_id = logo_id;
         this.phone_number = data.phone_number();
         this.email = data.email();
         this.address = data.address();
     }
 
-    public void updateBakery(BakeryRequestDTO data, String logo) {
+    public void updateBakery(BakeryRequestDTO data, String logo,  String logo_id) {
         if (logo != null) this.logo = logo;
+        if (logo_id != null) this.logo_id = logo_id;
         if (data.phone_number() != null) this.phone_number = data.phone_number();
         if (data.email() != null) this.email = data.email();
     }
