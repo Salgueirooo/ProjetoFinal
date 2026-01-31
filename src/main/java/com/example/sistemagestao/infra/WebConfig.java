@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("https://sistemagestao-woad.vercel.app"));
+        config.setAllowedOrigins(List.of("https://sistemagestao-baketec.vercel.app", "http://192.168.1.66:5173"));
 
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
