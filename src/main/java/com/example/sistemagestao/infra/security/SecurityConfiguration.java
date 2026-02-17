@@ -87,7 +87,8 @@ public class SecurityConfiguration {
                                 "/api/order/set-order-delivered/*",
                                 "/api/order/search-email-day/*",
                                 "/api/order/get-accepted-by-date/*",
-                                "/api/order/get-ready-by-date/*"
+                                "/api/order/get-ready-by-date/*",
+                                "/api/product-stock/verify-stock-order/*"
                         )
                         .hasRole("COUNTER_EMPLOYEE")
 
